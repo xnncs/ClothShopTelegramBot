@@ -23,6 +23,38 @@ namespace ShopTelegramBot.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("CartShoppingItem", b =>
+                {
+                    b.Property<Guid>("CartId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ItemsAddedId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("CartId", "ItemsAddedId");
+
+                    b.HasIndex("ItemsAddedId");
+
+                    b.ToTable("CartShoppingItem");
+                });
+
+            modelBuilder.Entity("ShopTelegramBot.Models.Cart", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("OwnerId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OwnerId")
+                        .IsUnique();
+
+                    b.ToTable("Carts");
+                });
+
             modelBuilder.Entity("ShopTelegramBot.Models.ShoppingCategory", b =>
                 {
                     b.Property<Guid>("Id")
@@ -102,16 +134,32 @@ namespace ShopTelegramBot.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+                });
 
-                    b.HasData(
-                        new
-                        {
-                            Id = new Guid("510cf288-78b3-4591-9abe-aef60f0e7ab8"),
-                            Age = 18,
-                            IsAdmin = true,
-                            TelegramId = 1367636999L,
-                            Username = "zitiret"
-                        });
+            modelBuilder.Entity("CartShoppingItem", b =>
+                {
+                    b.HasOne("ShopTelegramBot.Models.Cart", null)
+                        .WithMany()
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("ShopTelegramBot.Models.ShoppingItem", null)
+                        .WithMany()
+                        .HasForeignKey("ItemsAddedId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("ShopTelegramBot.Models.Cart", b =>
+                {
+                    b.HasOne("ShopTelegramBot.Models.User", "Owner")
+                        .WithOne("Cart")
+                        .HasForeignKey("ShopTelegramBot.Models.Cart", "OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Owner");
                 });
 
             modelBuilder.Entity("ShopTelegramBot.Models.ShoppingItem", b =>
@@ -128,6 +176,12 @@ namespace ShopTelegramBot.Migrations
             modelBuilder.Entity("ShopTelegramBot.Models.ShoppingCategory", b =>
                 {
                     b.Navigation("ShoppingItems");
+                });
+
+            modelBuilder.Entity("ShopTelegramBot.Models.User", b =>
+                {
+                    b.Navigation("Cart")
+                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

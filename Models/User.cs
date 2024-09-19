@@ -4,14 +4,28 @@ namespace ShopTelegramBot.Models;
 
 public class User
 {
-    public static User Create(long telegramId, string? username, int age, bool isAdmin) => new User
+    public static User Create(long telegramId, string? username, int age, bool isAdmin)
     {
-        Id = NewGuid(),
-        TelegramId = telegramId,
-        Username = username,
-        Age = age,
-        IsAdmin = isAdmin
-    };
+        Cart cart = new Cart()
+        {
+            Id = NewGuid(),
+            ItemsAdded = Enumerable.Empty<ShoppingItem>().ToList(),
+        };
+        User user = new User()
+        {
+            Id = NewGuid(),
+            TelegramId = telegramId,
+            Username = username,
+            Age = age,
+            IsAdmin = isAdmin,
+        };
+        cart.Owner = user;
+        cart.OwnerId = user.Id;
+        
+        user.Cart = cart;
+        
+        return user;
+    }
     
     
     public Guid Id { get; set; }
@@ -21,4 +35,6 @@ public class User
     public int Age { get; set; }
     
     public bool IsAdmin { get; set; }
+
+    public Cart Cart { get; set; }
 }

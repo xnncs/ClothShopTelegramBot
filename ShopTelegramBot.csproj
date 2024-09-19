@@ -24,7 +24,15 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="photos\" />
+      <Compile Remove="photos\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="photos\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="photos\**" />
     </ItemGroup>
 
 </Project>

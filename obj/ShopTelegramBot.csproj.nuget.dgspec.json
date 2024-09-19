@@ -1,28 +1,26 @@
 {
   "format": 1,
   "restore": {
-    "D:\\code\\codes\\ShopTelegramBot\\ShopTelegramBot\\ShopTelegramBot.csproj": {}
+    "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/ShopTelegramBot.csproj": {}
   },
   "projects": {
-    "D:\\code\\codes\\ShopTelegramBot\\ShopTelegramBot\\ShopTelegramBot.csproj": {
+    "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/ShopTelegramBot.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\code\\codes\\ShopTelegramBot\\ShopTelegramBot\\ShopTelegramBot.csproj",
+        "projectUniqueName": "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/ShopTelegramBot.csproj",
         "projectName": "ShopTelegramBot",
-        "projectPath": "D:\\code\\codes\\ShopTelegramBot\\ShopTelegramBot\\ShopTelegramBot.csproj",
-        "packagesPath": "C:\\Users\\anyon\\.nuget\\packages\\",
-        "outputPath": "D:\\code\\codes\\ShopTelegramBot\\ShopTelegramBot\\obj\\",
+        "projectPath": "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/ShopTelegramBot.csproj",
+        "packagesPath": "/Users/artem/.nuget/packages/",
+        "outputPath": "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\anyon\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/Users/artem/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "https://api.nuget.org/v3/index.json": {},
-          "https://nuget.voids.site/v3/index.jso": {},
-          "https://nuget.voids.site/v3/index.json": {}
+          "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
           "net9.0": {
@@ -38,7 +36,7 @@
         "restoreAuditProperties": {
           "enableAudit": "true",
           "auditLevel": "low",
-          "auditMode": "direct"
+          "auditMode": "all"
         }
       },
       "frameworks": {
@@ -94,7 +92,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.100-preview.4.24267.66/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/9.0.100-rc.1.24452.12/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

@@ -8,13 +8,16 @@ using ShopTelegramBot.Abstract;
 using ShopTelegramBot.Database;
 using ShopTelegramBot.HelpingModels;
 using ShopTelegramBot.Models;
+using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramUpdater;
 using TelegramUpdater.UpdateContainer;
 using TelegramUpdater.UpdateHandlers.Scoped.ReadyToUse;
 using Internal_User = ShopTelegramBot.Models.User;
+using IO_File = System.IO.File;
 
 namespace ShopTelegramBot.Handlers;
 
@@ -36,7 +39,7 @@ public class ScopedMessageHandler : MessageHandler
 
     private readonly char _specialSymbol;
 
-    private static readonly string[] UserCommands = ["/start", "/categories"];
+    private static readonly string[] UserCommands = ["/start", "/categories", "/cart"];
     private static readonly string[] AdminCommands = ["/add_category", "/add_item", "/delete_category", "/delete_item"];
     
     protected override async Task HandleAsync(IContainer<Message> container)
@@ -89,6 +92,11 @@ public class ScopedMessageHandler : MessageHandler
                 await OnGetCategoriesCommandAsync();
                 break;
             
+            case "/cart":
+                await OnGetCartCommandAsync(message.Chat.Id);
+                break;
+
+
             case "/add_category":
                 if (!await CheckAdminPermissionAsync(message.Chat.Id))
                 {
@@ -125,6 +133,148 @@ public class ScopedMessageHandler : MessageHandler
                 await OnDeleteItemCommandAsync();
                 break;
         }
+    }
+
+    private async Task OnGetCartCommandAsync(long telegramUserId)
+    {
+        Internal_User? user = await _dbContext.Users
+            .Include(x => x.Cart)
+            .ThenInclude(x => x.ItemsAdded)
+            .FirstOrDefaultAsync(x => x.TelegramId == telegramUserId);
+        if (user is null)
+        {
+            await ResponseAsync("Вы не зарегестрированны");
+            return;
+        }
+
+        if (user.Cart.ItemsAdded.Count == 0)
+        {
+            await ResponseAsync("У вас пока нет товаров в карзине");
+            return;
+        }
+        // string baseMessageResponse = GenerateCartAsStringResponse(user.Cart);
+        // await ResponseAsync(baseMessageResponse);
+
+        await ResponseCartAsync(user.Cart, telegramUserId);
+    }
+
+    private async Task ResponseCartAsync(Cart cart, long userId)
+    {
+        await ResponseAsync("Ваша карзина:");
+        foreach (ShoppingItem item in cart.ItemsAdded)
+        {
+            try
+            {
+                await SendResponsePhotosForShoppingItemAsync(shoppingItem: item, userId);
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.Message);
+                await ResponseAsync("Что то пошло не так, попробуйте позже");
+                return;
+            }
+            
+        }
+
+        await ResponseAsync($"Общая сумма к оплате составит {cart.ItemsAdded.Sum(x => x.Price)}р");
+    }
+
+    private async Task SendResponsePhotosForShoppingItemAsync(ShoppingItem shoppingItem, long userId)
+    {
+        if (shoppingItem.PhotoFileNames.Count == 0)
+        {
+            throw new Exception("No such photos (business logic mistake)");
+        }
+
+        if (shoppingItem.PhotoFileNames.Count == 1)
+        {
+            await GetResponsePhotosForSingleShoppingAsync(shoppingItem, userId);
+            return;
+        }
+
+        if (shoppingItem.PhotoFileNames.Count <= 9)
+        {
+            (List<InputMediaPhoto>, List<Stream>) getPhotosResult = await GetResponsePhotosForManyShoppingItemsAsync(shoppingItem, userId);
+            
+            await BotClient.SendMediaGroupAsync(userId, getPhotosResult.Item1);
+            
+            foreach (Stream stream in getPhotosResult.Item2)
+            {
+                await stream.DisposeAsync();
+            }
+
+            return;
+        }
+
+        throw new Exception("More then 9 photos (business logic mistake)");
+    }
+    
+    private async Task GetResponsePhotosForSingleShoppingAsync(ShoppingItem shoppingItem, long userId)
+    {
+        string responseMessage = GenerateShortShoppingItemMessage(shoppingItem);
+        
+        string photoPathUrl =
+            _photoDownloadHelper.GenerateFilePathString(shoppingItem.PhotoFileNames[0], shoppingItem.Name);
+            
+        if (!IO_File.Exists(photoPathUrl))
+        {
+            await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
+            await BotClient.SendTextMessageAsync(userId, responseMessage);
+            throw new Exception("No such files with this path");
+        }
+            
+        using (Stream fileStream = IO_File.Open(photoPathUrl, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            InputOnlineFile file = new InputMedia(content: fileStream, fileName: shoppingItem.PhotoFileNames[0]);
+            await BotClient.SendPhotoAsync(userId, file, responseMessage);
+        }
+    }
+    
+    private async Task<(List<InputMediaPhoto>, List<Stream>)> GetResponsePhotosForManyShoppingItemsAsync(ShoppingItem chosenItem, long userId)
+    {
+        string responseMessage = GenerateShortShoppingItemMessage(chosenItem);
+        
+        List<InputMediaPhoto> photos = new List<InputMediaPhoto>();
+
+        List<Stream> photoStreams = new List<Stream>();
+        foreach (string fileName in chosenItem.PhotoFileNames)
+        {
+            string photoPathUrl =
+                _photoDownloadHelper.GenerateFilePathString(fileName, chosenItem.Name);
+
+
+            if (!IO_File.Exists(photoPathUrl))
+            {
+                await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
+                await BotClient.SendTextMessageAsync(userId, responseMessage);
+                throw new Exception("Something wrong with photo files");
+            }
+
+            Stream fileStream = IO_File.Open(photoPathUrl, FileMode.Open, FileAccess.Read, FileShare.Read);
+            photos.Add(
+                new InputMediaPhoto(
+                    new InputMedia(fileStream, fileName: fileName)));
+            
+            photoStreams.Add(fileStream);
+        }
+
+        photos[0].Caption = responseMessage;
+        
+        return (photos, photoStreams);
+    }
+    
+    private string GenerateCartAsStringResponse(Cart cart)
+    {
+        StringBuilder builder = new StringBuilder();
+        
+        builder.Append("Ваша карзина:\n");
+        foreach (ShoppingItem item in cart.ItemsAdded) 
+        {
+            builder.Append("\n");
+            builder.Append(GenerateShortShoppingItemMessage(item));
+        }
+        builder.Append($"\n\nполная стоимость составит: {cart.ItemsAdded.Sum(x => x.Price)}");
+        return builder.ToString();
     }
 
     private async Task OnTextMessage(Message message)
@@ -465,6 +615,15 @@ public class ScopedMessageHandler : MessageHandler
     private static string GenerateCategoryText(ShoppingCategory category)
     {
         return $"\n\n{category.Name}: \n{category.Description}";
+    }
+    
+    private string GenerateShortShoppingItemMessage(ShoppingItem item)
+    {
+        StringBuilder messageBuilder = new StringBuilder();
+        
+        messageBuilder.Append($"{item.Name} - {item.Price}р\n");
+        
+        return messageBuilder.ToString();
     }
     
     

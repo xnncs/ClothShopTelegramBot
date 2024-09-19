@@ -17,6 +17,7 @@ using IO_File = System.IO.File;
 using Telegram_File = Telegram.Bot.Types.File;
 using System.IO;
 using Microsoft.EntityFrameworkCore.Storage;
+using Internal_User = ShopTelegramBot.Models.User;
 
 namespace ShopTelegramBot.Handlers;
 
@@ -75,8 +76,52 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         {
             await HandleDeleteItemAsync(callbackQuery);
         }
+        
+        List<string> itemNamesFormatForAddItemToCartCallback = itemNames.Select(_callbackGenerateHelper.GenerateCallbackOnAddToCart).ToList();
+        if (itemNamesFormatForAddItemToCartCallback.Contains(callbackQuery.Data))
+        {
+            await HandleAddItemToCartAsync(callbackQuery);
+        }
     }
 
+    private async Task HandleAddItemToCartAsync(CallbackQuery callbackQuery)
+    {
+        long userId = callbackQuery.From.Id;
+        
+        string responseMessage = "Ok";
+        await using (IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                List<ShoppingItem> items = await _dbContext.ShoppingItems
+                    .ToListAsync();
+
+                ShoppingItem item = items.FirstOrDefault(x =>
+                                        _callbackGenerateHelper.GenerateCallbackOnAddToCart(x.Name) ==
+                                        callbackQuery.Data)
+                                    ?? throw new Exception();
+
+                Internal_User user = await _dbContext.Users
+                    .Include(x => x.Cart)
+                    .ThenInclude(x => x.ItemsAdded)
+                    .FirstOrDefaultAsync(x => x.TelegramId == userId)
+                    ?? throw new Exception();
+                
+                user.Cart.ItemsAdded.Add(item);
+                
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.Message);
+
+                responseMessage = "Что-то пошло не так, попробуйте позже";
+            }
+        }
+        
+        await BotClient.SendTextMessageAsync(userId, responseMessage);
+    }
     private async Task HandleDeleteItemAsync(CallbackQuery callbackQuery)
     {
         long userId = callbackQuery.From.Id;
@@ -172,15 +217,23 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         {
             throw new Exception("Item has more then 9 pictures");
         }
-
-        (List<InputMediaPhoto>, List<Stream>) getPhotosResult = await GetResponsePhotosForShoppingItemAsync(chosenItem, userId);
-
-        await BotClient.SendMediaGroupAsync(userId, getPhotosResult.Item1);
-
-        foreach (Stream stream in getPhotosResult.Item2)
+        else
         {
-            await stream.DisposeAsync();
+            (List<InputMediaPhoto>, List<Stream>) getPhotosResult = await GetResponsePhotosForShoppingItemAsync(chosenItem, userId);
+
+            await BotClient.SendMediaGroupAsync(userId, getPhotosResult.Item1);
+            
+            foreach (Stream stream in getPhotosResult.Item2)
+            {
+                await stream.DisposeAsync();
+            }
         }
+        await BotClient.SendTextMessageAsync(userId, "Добавить в корзину", replyMarkup: new InlineKeyboardMarkup([
+            new InlineKeyboardButton("Добавить")
+            {
+                CallbackData = _callbackGenerateHelper.GenerateCallbackOnAddToCart(chosenItem.Name)
+            }
+        ]));
     }
 
     private async Task<(List<InputMediaPhoto>, List<Stream>)> GetResponsePhotosForShoppingItemAsync(ShoppingItem chosenItem, long userId)
@@ -212,6 +265,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         }
 
         photos[0].Caption = responseMessage;
+        
         return (photos, photoStreams);
     }
 

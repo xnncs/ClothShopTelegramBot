@@ -13,8 +13,6 @@ public sealed class ApplicationDbContext : DbContext
     public ApplicationDbContext()
     {
         _pathHelper = new PathHelper();
-        
-        Database.EnsureCreated();
     }
     
     public DbSet<User> Users { get; set; }
@@ -22,6 +20,7 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<ShoppingItem> ShoppingItems { get; set; }
     public DbSet<ShoppingCategory> ShoppingCategories { get; set; }
 
+    public DbSet<Cart> Carts { get; set; }
 
     private readonly IPathHelper _pathHelper;
     
@@ -42,7 +41,7 @@ public sealed class ApplicationDbContext : DbContext
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        List<User> admins = [User.Create(1367636999, "zitiret", 18, true)];
+        List<User> admins = [];
         
         modelBuilder.Entity<User>(options =>
         {
@@ -51,7 +50,7 @@ public sealed class ApplicationDbContext : DbContext
 
             options.Property(x => x.Username).HasMaxLength(35);
 
-            
+
             options.HasData(admins);
         });
 
@@ -77,6 +76,16 @@ public sealed class ApplicationDbContext : DbContext
             options.Property(x => x.Name).HasMaxLength(35);
 
             options.Property(x => x.Description).HasMaxLength(1000);
+        });
+
+        modelBuilder.Entity<Cart>(options => 
+        {
+            options.HasOne(x => x.Owner)
+                .WithOne(x => x.Cart)
+                .HasForeignKey<Cart>(x => x.OwnerId);
+
+            options.HasMany(x => x.ItemsAdded)
+                .WithMany();
         });
     }
 }
