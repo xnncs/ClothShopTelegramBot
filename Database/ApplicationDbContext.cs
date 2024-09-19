@@ -62,7 +62,7 @@ public sealed class ApplicationDbContext : DbContext
 
             options.Property(x => x.Name).HasMaxLength(35);
 
-            options.Property(x => x.Description).HasMaxLength(250);
+            options.Property(x => x.Description).HasMaxLength(1000);
 
             options.HasOne(x => x.ShoppingCategory)
                 .WithMany(x => x.ShoppingItems)
@@ -76,7 +76,7 @@ public sealed class ApplicationDbContext : DbContext
 
             options.Property(x => x.Name).HasMaxLength(35);
 
-            options.Property(x => x.Description).HasMaxLength(250);
+            options.Property(x => x.Description).HasMaxLength(1000);
         });
     }
 }

@@ -16,22 +16,25 @@ using TelegramUpdater.UpdateHandlers.Scoped.ReadyToUse;
 using IO_File = System.IO.File;
 using Telegram_File = Telegram.Bot.Types.File;
 using System.IO;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace ShopTelegramBot.Handlers;
 
 public class ScopedCallbackHandler : CallbackQueryHandler
 {
-    public ScopedCallbackHandler(ApplicationDbContext dbContext, ILogger<ScopedCallbackHandler> logger, IOptions<CharReplacingSettings> replacingSettings, IPhotoDownloadHelper photoDownloadHelper)
+    public ScopedCallbackHandler(ApplicationDbContext dbContext, ILogger<ScopedCallbackHandler> logger, IOptions<CharReplacingSettings> replacingSettings, IPhotoDownloadHelper photoDownloadHelper, ICallbackGenerateHelper callbackGenerateHelper)
     {
         _dbContext = dbContext;
         _logger = logger;
         _photoDownloadHelper = photoDownloadHelper;
+        _callbackGenerateHelper = callbackGenerateHelper;
         _specialSymbol = replacingSettings.Value.SpecialSymbol[0];
     }
     
     private readonly ApplicationDbContext _dbContext;
     private readonly ILogger<ScopedCallbackHandler> _logger;
     private readonly IPhotoDownloadHelper _photoDownloadHelper;
+    private readonly ICallbackGenerateHelper _callbackGenerateHelper;
     
     private readonly char _specialSymbol;
     
@@ -44,25 +47,103 @@ public class ScopedCallbackHandler : CallbackQueryHandler
 
         CallbackQuery callbackQuery = container.Container.CallbackQuery;
         
-        
         List<string> categoryNames = await _dbContext.ShoppingCategories.Select(x => x.Name).ToListAsync();
-        categoryNames = categoryNames.Select(GenerateCategoriesCallbackFormatString).ToList();
-
-        if (categoryNames.Contains(callbackQuery.Data))
-        {
-            await HandleChoosingCategoryAsync(callbackQuery);
-        }
-
         List<string> itemNames = await _dbContext.ShoppingItems.Select(x => x.Name).ToListAsync();
-        itemNames = itemNames.Select(GenerateItemsCallbackFormatString).ToList();
-
-        if (itemNames.Contains(callbackQuery.Data))
+        
+        
+        List<string> categoryNamesFormatForGetCategoryCallback = categoryNames.Select(_callbackGenerateHelper.GenerateCategoriesCallbackFormatStringOnGet).ToList();
+        if (categoryNamesFormatForGetCategoryCallback.Contains(callbackQuery.Data))
         {
-            await HandleChoosingItemAsync(callbackQuery);
+            await HandleChooseCategoryAsync(callbackQuery);
+        }
+        
+        
+        List<string> itemNamesFormatForGetItemCallback = itemNames.Select(_callbackGenerateHelper.GenerateItemsCallbackFormatStringOnGet).ToList();
+        if (itemNamesFormatForGetItemCallback.Contains(callbackQuery.Data))
+        {
+            await HandleChooseItemAsync(callbackQuery);
+        }
+        
+        List<string> categoryNamesFormatForDeleteCategoryCallback = categoryNames.Select(_callbackGenerateHelper.GenerateCategoriesCallbackFormatStringOnDelete).ToList();
+        if (categoryNamesFormatForDeleteCategoryCallback.Contains(callbackQuery.Data))
+        {
+            await HandleDeleteCategoryAsync(callbackQuery);
+        }
+        
+        List<string> itemNamesFormatForDeleteItemCallback = itemNames.Select(_callbackGenerateHelper.GenerateItemsCallbackFormatStringOnDelete).ToList();
+        if (itemNamesFormatForDeleteItemCallback.Contains(callbackQuery.Data))
+        {
+            await HandleDeleteItemAsync(callbackQuery);
         }
     }
 
-    private async Task HandleChoosingItemAsync(CallbackQuery callbackQuery)
+    private async Task HandleDeleteItemAsync(CallbackQuery callbackQuery)
+    {
+        long userId = callbackQuery.From.Id;
+        
+        string responseMessage = "Ok";
+        await using (IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                List<ShoppingItem> items = await _dbContext.ShoppingItems
+                    .ToListAsync();
+
+                ShoppingItem item = items.FirstOrDefault(x =>
+                                        _callbackGenerateHelper.GenerateItemsCallbackFormatStringOnDelete(x.Name) ==
+                                        callbackQuery.Data)
+                                    ?? throw new Exception();
+
+                await _dbContext.ShoppingItems.Where(x => x.Id == item.Id).ExecuteDeleteAsync();
+                
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.Message);
+
+                responseMessage = "Что-то пошло не так, попробуйте позже";
+            }
+        }
+
+        await BotClient.SendTextMessageAsync(userId, responseMessage);
+    }
+
+    private async Task HandleDeleteCategoryAsync(CallbackQuery callbackQuery)
+    {
+        long userId = callbackQuery.From.Id;
+        
+        string responseMessage = "Ok";
+        await using (IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                List<ShoppingCategory> categories = await _dbContext.ShoppingCategories
+                    .ToListAsync();
+
+                ShoppingCategory category = categories.FirstOrDefault(x =>
+                                            _callbackGenerateHelper.GenerateCategoriesCallbackFormatStringOnDelete(x.Name) ==
+                                            callbackQuery.Data)
+                                        ?? throw new Exception();
+
+                await _dbContext.ShoppingCategories.Where(x => x.Id == category.Id).ExecuteDeleteAsync();
+                
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.Message);
+
+                responseMessage = "Что-то пошло не так, попробуйте позже";
+            }
+        }
+
+        await BotClient.SendTextMessageAsync(userId, responseMessage);
+    }
+
+    private async Task HandleChooseItemAsync(CallbackQuery callbackQuery)
     {
         long userId = callbackQuery.From.Id;
         
@@ -71,14 +152,14 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             .ToListAsync();
 
         ShoppingItem chosenItem =
-            items.FirstOrDefault(x => GenerateItemsCallbackFormatString(x.Name) == callbackQuery.Data)
+            items.FirstOrDefault(x => _callbackGenerateHelper.GenerateItemsCallbackFormatStringOnGet(x.Name) == callbackQuery.Data)
             ?? throw new Exception();
         
         string responseMessage = GenerateLongShoppingItemMessage(chosenItem);
 
         if (chosenItem.PhotoFileNames.Count == 0)
         {
-            await BotClient.SendTextMessageAsync(userId, "Something went wrong with pictures.");
+            await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
             await BotClient.SendTextMessageAsync(userId, responseMessage);
             throw new Exception("Something wrong with photo files");
         }
@@ -117,7 +198,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
 
             if (!IO_File.Exists(photoPathUrl))
             {
-                await BotClient.SendTextMessageAsync(userId, "Something went wrong with pictures.");
+                await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
                 await BotClient.SendTextMessageAsync(userId, responseMessage);
                 throw new Exception("Something wrong with photo files");
             }
@@ -143,7 +224,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             
         if (!IO_File.Exists(photoPathUrl))
         {
-            await BotClient.SendTextMessageAsync(userId, "Something went wrong with pictures.");
+            await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
             await BotClient.SendTextMessageAsync(userId, responseMessage);
             throw new Exception("No such files with this path");
         }
@@ -155,7 +236,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         }
     }
 
-    private async Task HandleChoosingCategoryAsync(CallbackQuery callbackQuery)
+    private async Task HandleChooseCategoryAsync(CallbackQuery callbackQuery)
     {
         long userId = callbackQuery.From.Id;
         
@@ -163,12 +244,12 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             .Include(x => x.ShoppingItems)
             .ToListAsync();
         
-        ShoppingCategory chosenCategory = categories.FirstOrDefault(x => GenerateCategoriesCallbackFormatString(x.Name) == callbackQuery.Data)
+        ShoppingCategory chosenCategory = categories.FirstOrDefault(x => _callbackGenerateHelper.GenerateCategoriesCallbackFormatStringOnGet(x.Name) == callbackQuery.Data)
                                            ?? throw new Exception();
         
         if (!chosenCategory.ShoppingItems.Any())
         {
-            await BotClient.SendTextMessageAsync(userId, "Sorry, no items in this category right now");
+            await BotClient.SendTextMessageAsync(userId, "Пока что в этой категории нет товаров");
             return;
         }
         
@@ -176,7 +257,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         
         if (chosenCategory.ShoppingItems.Count == 0)
         {
-            await BotClient.SendTextMessageAsync(userId, "Something went wrong with pictures.");
+            await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
             await BotClient.SendTextMessageAsync(userId, responseMessage);
             throw new Exception("Something wrong with photo files");
         }
@@ -189,8 +270,6 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         {
             throw new Exception("Category cant has more then 9 items");
         }
-
-        InlineKeyboardMarkup keyboard = GenerateCategoriesInlineKeyboardMarkup(chosenCategory);
         
         (List<InputMediaPhoto>, List<Stream>) getPhotosResult =
             await GetResponsePhotosForCategoryAsync(chosenCategory, userId);
@@ -201,6 +280,9 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         {
             await stream.DisposeAsync();
         }
+
+        InlineKeyboardMarkup keyboard = GenerateCategoriesInlineKeyboardMarkup(chosenCategory);
+        await BotClient.SendTextMessageAsync(userId,"Выберите вещь по её номеру", replyMarkup: keyboard);
     }
     
     private async Task<(List<InputMediaPhoto>, List<Stream>)> GetResponsePhotosForCategoryAsync(ShoppingCategory category, long userId)
@@ -221,7 +303,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
 
             if (!IO_File.Exists(photoPathUrl))
             {
-                await BotClient.SendTextMessageAsync(userId, "Something went wrong with pictures.");
+                await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
                 await BotClient.SendTextMessageAsync(userId, responseMessage);
                 throw new Exception("Something wrong with photo files");
             }
@@ -258,13 +340,15 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             InputOnlineFile file = new InputMedia(content: fileStream, fileName: singleItem.PhotoFileNames[0]);
             await BotClient.SendPhotoAsync(userId, file, responseMessage);
         }
+        InlineKeyboardMarkup keyboard = GenerateCategoriesInlineKeyboardMarkup(category);
+        await BotClient.SendTextMessageAsync(userId,"Выберите вещь по её номеру", replyMarkup: keyboard);
     }
 
     private string GenerateMessageOnGetShoppingItem(ShoppingCategory category)
     {
         StringBuilder messageBuilder = new StringBuilder();
 
-        messageBuilder.Append($"Our {category.Name}:\n");
+        messageBuilder.Append($"Наши {category.Name}:\n");
         
         for (int index = 0; index < category.ShoppingItems.Count; index++)
         {
@@ -281,7 +365,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
     {
         StringBuilder messageBuilder = new StringBuilder();
         
-        messageBuilder.Append($"{item.Name} - {item.Price} rubles\n");
+        messageBuilder.Append($"{item.Name} - {item.Price}р\n");
         
         return messageBuilder.ToString();
     }
@@ -290,9 +374,9 @@ public class ScopedCallbackHandler : CallbackQueryHandler
     {
         StringBuilder messageBuilder = new StringBuilder();
         
-        messageBuilder.Append($"{item.Name} - {item.Price} rubles\n\n");
+        messageBuilder.Append($"{item.Name} - {item.Price}р\n\n");
         messageBuilder.Append(item.Description);
-        messageBuilder.Append($"\n\n\nIn stock: {item.UnitsInStock}");
+        messageBuilder.Append($"\n\n\nВ наличии: {item.UnitsInStock}");
 
         return messageBuilder.ToString();
     }
@@ -306,7 +390,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
 
             InlineKeyboardButton button = new InlineKeyboardButton((index + 1).ToString())
             {
-                CallbackData = GenerateItemsCallbackFormatString(item.Name)
+                CallbackData = _callbackGenerateHelper.GenerateItemsCallbackFormatStringOnGet(item.Name)
             };
             
             buttons.Add(button);
@@ -314,15 +398,4 @@ public class ScopedCallbackHandler : CallbackQueryHandler
 
         return new InlineKeyboardMarkup(buttons);
     }
-    
-    private static string GenerateCategoriesCallbackFormatString(string x)
-    {
-        return $"categories/{x.ToLower()}";
-    }
-    
-    private static string GenerateItemsCallbackFormatString(string x)
-    {
-        return $"items/{x.ToLower()}";
-    }
-    
 }

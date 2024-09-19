@@ -36,6 +36,7 @@ builder.ConfigureServices((hostContext, services) =>
 
    services.AddScoped<IPathHelper, PathHelper>();
    services.AddScoped<IPhotoDownloadHelper, PhotoDownloadHelper>();
+   services.AddScoped<ICallbackGenerateHelper, CallbackGenerateHelper>();
    
    ConfigureTelegramUpdater(services, hostContext.Configuration);
 });

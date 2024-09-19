@@ -30,8 +30,8 @@ namespace ShopTelegramBot.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -53,8 +53,8 @@ namespace ShopTelegramBot.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)");
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -102,6 +102,16 @@ namespace ShopTelegramBot.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("510cf288-78b3-4591-9abe-aef60f0e7ab8"),
+                            Age = 18,
+                            IsAdmin = true,
+                            TelegramId = 1367636999L,
+                            Username = "zitiret"
+                        });
                 });
 
             modelBuilder.Entity("ShopTelegramBot.Models.ShoppingItem", b =>

@@ -20,22 +20,24 @@ namespace ShopTelegramBot.Handlers;
 
 public class ScopedMessageHandler : MessageHandler
 {
-    public ScopedMessageHandler(ApplicationDbContext dbContext, ILogger<ScopedMessageHandler> logger, IPhotoDownloadHelper photoDownloadHelper, IOptions<CharReplacingSettings> replacingSettings)
+    public ScopedMessageHandler(ApplicationDbContext dbContext, ILogger<ScopedMessageHandler> logger, IPhotoDownloadHelper photoDownloadHelper, IOptions<CharReplacingSettings> replacingSettings, ICallbackGenerateHelper callbackGenerateHelper)
     {
         _dbContext = dbContext;
         _logger = logger;
         _photoDownloadHelper = photoDownloadHelper;
+        _callbackGenerateHelper = callbackGenerateHelper;
         _specialSymbol = replacingSettings.Value.SpecialSymbol[0];
     }
 
     private readonly ApplicationDbContext _dbContext;
     private readonly ILogger<ScopedMessageHandler> _logger;
     private readonly IPhotoDownloadHelper _photoDownloadHelper;
+    private readonly ICallbackGenerateHelper _callbackGenerateHelper;
 
     private readonly char _specialSymbol;
 
     private static readonly string[] UserCommands = ["/start", "/categories"];
-    private static readonly string[] AdminCommands = ["/add_category", "/add_item"];
+    private static readonly string[] AdminCommands = ["/add_category", "/add_item", "/delete_category", "/delete_item"];
     
     protected override async Task HandleAsync(IContainer<Message> container)
     {
@@ -76,36 +78,58 @@ public class ScopedMessageHandler : MessageHandler
         
     private async Task OnCommand(string command, string args, Message message)
     {
+        string adminPermissionsErrorMessage = "У вас нет админ-прав для выполнения этой комманды.";
         switch (command)
         {
             case "/start":
                 await OnStartCommandAsync(message.Chat.Id, message.Chat.Username);
                 break;
+            
             case "/categories":
                 await OnGetCategoriesCommandAsync();
                 break;
+            
             case "/add_category":
                 if (!await CheckAdminPermissionAsync(message.Chat.Id))
                 {
-                    await ResponseAsync("You have no admin permissions for this command");
+                    await ResponseAsync(adminPermissionsErrorMessage);
                     break;
                 }
                 await OnAddCategoryCommandAsync();
                 break;
+            
             case "/add_item":
                 if (!await CheckAdminPermissionAsync(message.Chat.Id))
                 {
-                    await ResponseAsync("You have no admin permissions for this command");
+                    await ResponseAsync(adminPermissionsErrorMessage);
                     break;
                 }
                 await OnAddItemCommandAsync();
                 break;
+            
+            case "/delete_category":
+                if (!await CheckAdminPermissionAsync(message.Chat.Id))
+                {
+                    await ResponseAsync(adminPermissionsErrorMessage);
+                    break;
+                }
+                await OnDeleteCategoryCommandAsync();
+                break;
+            
+            case "/delete_item":
+                if (!await CheckAdminPermissionAsync(message.Chat.Id))
+                {
+                    await ResponseAsync(adminPermissionsErrorMessage);
+                    break;
+                }
+                await OnDeleteItemCommandAsync();
+                break;
         }
     }
-    
+
     private async Task OnTextMessage(Message message)
     {
-        string response = "Wrong command format.";
+        string response = "Неправильный формат комманды";
         await ResponseAsync(response);
     }
 
@@ -113,9 +137,47 @@ public class ScopedMessageHandler : MessageHandler
 
     #region AdminCommands
 
+    private async Task OnDeleteCategoryCommandAsync()
+    {
+        List<ShoppingCategory> categories = await _dbContext.ShoppingCategories.ToListAsync();
+        
+        List<InlineKeyboardButton> buttons = new List<InlineKeyboardButton>();
+        foreach (ShoppingCategory category in categories)
+        {
+            InlineKeyboardButton button = new InlineKeyboardButton(category.Name)
+            {
+                CallbackData = _callbackGenerateHelper.GenerateCategoriesCallbackFormatStringOnDelete(category.Name)
+            };
+            buttons.Add(button);
+        }
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup(buttons);
+
+        await ResponseAsync("Какую категорию вы хотите удалить?\n(При удалении категории, также удалятся и все предметы, которые в ней были)", replyMarkup: keyboard);
+    }
+    
+    private async Task OnDeleteItemCommandAsync()
+    {
+        List<ShoppingItem> items = await _dbContext.ShoppingItems.ToListAsync();
+        
+        List<InlineKeyboardButton> buttons = new List<InlineKeyboardButton>();
+        foreach (ShoppingItem item in items)
+        {
+            InlineKeyboardButton button = new InlineKeyboardButton(item.Name)
+            {
+                CallbackData = _callbackGenerateHelper.GenerateItemsCallbackFormatStringOnDelete(item.Name)
+            };
+            buttons.Add(button);
+        }
+
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup(buttons);
+
+        await ResponseAsync("Какой предмет вы хотите удалить?", replyMarkup: keyboard);
+    }
+    
     private async Task OnAddItemCommandAsync()
     {
-        string responseMessage = "Everything is correct";
+        string responseMessage = "Ok";
         await using (IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync())
         {
             try
@@ -130,7 +192,7 @@ public class ScopedMessageHandler : MessageHandler
             {
                 _logger.LogError(exception.Message);
 
-                responseMessage = "Something went wrong, try again latter";
+                responseMessage = "Что-то пошло не так, попробуйте позже";
             }
         }
 
@@ -140,8 +202,8 @@ public class ScopedMessageHandler : MessageHandler
 
     private async Task OnAddCategoryCommandAsync()
     {
-        string? name = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Enter category name");
-        string? description = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Enter category description");
+        string? name = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите название категории");
+        string? description = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите описание категории");
 
         if (name is null || description is null)
         {
@@ -163,7 +225,7 @@ public class ScopedMessageHandler : MessageHandler
             {
                 _logger.LogError(exception.Message);
                 
-                string responseOnServerError = "Sorry something went wrong, try again latter";
+                string responseOnServerError = "Что-то пошло не так, попробуйте позже";
                 await ResponseAsync(responseOnServerError);
             }
         }
@@ -178,12 +240,12 @@ public class ScopedMessageHandler : MessageHandler
         List<ShoppingCategory> categories = await _dbContext.ShoppingCategories.ToListAsync();
         if (categories.Count == 0)
         {
-            await ResponseAsync("Sorry, right now no categories.");
+            await ResponseAsync("Пока что никаких категорий не добавлено.");
             return;
         }
         
         StringBuilder messageBuilder = new StringBuilder();
-        messageBuilder.Append("This is our categories:");
+        messageBuilder.Append("Наши категории:");
 
         List<InlineKeyboardButton> buttons = new List<InlineKeyboardButton>();
         foreach (ShoppingCategory category in categories)
@@ -193,7 +255,7 @@ public class ScopedMessageHandler : MessageHandler
 
             InlineKeyboardButton button = new InlineKeyboardButton(category.Name)
             {
-                CallbackData = GenerateCategoriesCallbackFormatString(category.Name)
+                CallbackData = _callbackGenerateHelper.GenerateCategoriesCallbackFormatStringOnGet(category.Name)
             };
 
             buttons.Add(button);
@@ -210,15 +272,15 @@ public class ScopedMessageHandler : MessageHandler
         bool containsUser = await _dbContext.Users.AnyAsync(u => u.TelegramId == telegramUserId);
         if (containsUser)
         {
-            string response = "Welcome back to out bot! \nYou are already registered";
+            string response = "Добро пожаловать в наш магазин вещей! тут надо че то придумать";
             await ResponseAsync(response);
         }
         else
         {
-            string welcomeResponse = "Welcome back to out bot! \nLet's answer some registration questions.";
+            string welcomeResponse = "Добро пожаловать в наш магазин вещей! тут надо че то придумать\nОтветьте пожалуйста на пару простых вопросов.";
             await ResponseAsync(welcomeResponse);
 
-            int? age = await GetIntValueAsync("1. Whats your age?");
+            int? age = await GetIntValueAsync("1. Сколько вам лет?");
             if (age == null)
             {
                 return;
@@ -238,13 +300,13 @@ public class ScopedMessageHandler : MessageHandler
                 {
                     _logger.LogError(exception.Message);
                 
-                    string responseOnServerError = "Sorry something went wrong, try again latter";
+                    string responseOnServerError = "Что-то пошло не так, попробуйте позже";
                     await ResponseAsync(responseOnServerError);
                     return;
                 }
             }
         
-            string messageText = "Welcome to our bot! \nThank you for registration!!";
+            string messageText = "Добро пожаловать в наш магазин вещей! тут надо че то придумать";
             await ResponseAsync(messageText);
         }
 
@@ -274,7 +336,7 @@ public class ScopedMessageHandler : MessageHandler
             }
             else
             {
-                string wrongFormatException = "Wrong age format";
+                string wrongFormatException = "Неправильный формат числовой переменной.";
                 await ResponseAsync(wrongFormatException);
             }
         }
@@ -296,7 +358,7 @@ public class ScopedMessageHandler : MessageHandler
             }
             else
             {
-                string wrongFormatException = "Wrong age format";
+                string wrongFormatException = "Неправильный формат числовой переменной.";
                 await ResponseAsync(wrongFormatException);
             }
         }
@@ -309,22 +371,22 @@ public class ScopedMessageHandler : MessageHandler
     #region LogicHelpingTools
     private async Task<ShoppingItem> GetShoppingItem()
     {
-        string categoryName = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Enter category name") ?? throw new Exception();
+        string categoryName = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите название категории") ?? throw new Exception();
         ShoppingCategory? itemCategory = await _dbContext.ShoppingCategories.FirstOrDefaultAsync(x =>
             x.Name.ToLower() == categoryName.ToLower());
         if (itemCategory == null)
         {
-            await ResponseAsync("No such category with this name.");
+            await ResponseAsync("У нас нет категорий с таким названием");
             throw new Exception();
         }
         
-        string itemName = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Enter item name") ?? throw new Exception();
-        string itemDescription = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Enter item description") ?? throw new Exception();
-        int unitsInStock = await GetIntValueAsync("Enter units in stock value") ?? throw new Exception();
-        double price = await GetDoubleValueAsync("Enter the price value") ?? throw new Exception();
+        string itemName = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите название товара") ?? throw new Exception();
+        string itemDescription = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите описание товара") ?? throw new Exception();
+        int unitsInStock = await GetIntValueAsync("Введите количество товара в наличи (число)") ?? throw new Exception();
+        double price = await GetDoubleValueAsync("Введите цену товара") ?? throw new Exception();
         
         
-        await ResponseAsync("Send items photos");
+        await ResponseAsync("Отправьте фотографии товара (1-9)");
         List<string> result = await GetPhotosFromUserAsync(itemName);
         if (result.Count == 0)
         {
@@ -339,7 +401,7 @@ public class ScopedMessageHandler : MessageHandler
     {
         List<string> photoFileNames = new List<string>();
         
-        IContainer<Message>? container = await AwaitMessageAsync(new Filter<Message>(), TimeSpan.FromSeconds(180));
+        IContainer<Message>? container = await AwaitMessageAsync(new Filter<Message>(), TimeSpan.FromSeconds(1080));
         while (container?.Update != null)
         {
             if (photoFileNames.Count >= 9)
@@ -370,11 +432,6 @@ public class ScopedMessageHandler : MessageHandler
     #endregion
     
     #region EverysingElseHelping
-    
-    private static string GenerateCategoriesCallbackFormatString(string x)
-    {
-        return $"categories/{x.ToLower()}";
-    }
     
     /// <summary>
     /// Generates response based on user role, that shows available commands

@@ -23,4 +23,8 @@
       <PackageReference Include="TelegramUpdater.Hosting" Version="1.4.0-preview.1.2" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="photos\" />
+    </ItemGroup>
+
 </Project>
