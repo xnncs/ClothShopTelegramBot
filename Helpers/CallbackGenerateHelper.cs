@@ -28,4 +28,9 @@ public class CallbackGenerateHelper : ICallbackGenerateHelper
     {
         return $"items/addToCart/{x.ToLower()}";
     }
+
+    public string GenerateCallbackOnRemoveFromCart(string x)
+    {
+        return $"items/removeFromCart/{x.ToLower()}";
+    }
 }

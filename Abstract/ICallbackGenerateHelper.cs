@@ -6,5 +6,6 @@ public interface ICallbackGenerateHelper
     string GenerateCategoriesCallbackFormatStringOnGet(string x);
     string GenerateItemsCallbackFormatStringOnGet(string x);
     string GenerateItemsCallbackFormatStringOnDelete(string x);
-    public string GenerateCallbackOnAddToCart(string x);
+    string GenerateCallbackOnAddToCart(string x);
+    string GenerateCallbackOnRemoveFromCart(string x);
 }

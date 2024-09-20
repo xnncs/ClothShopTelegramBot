@@ -82,6 +82,50 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         {
             await HandleAddItemToCartAsync(callbackQuery);
         }
+        
+        List<string> itemNamesFormatForRemoveItemFromCartCallback = itemNames.Select(_callbackGenerateHelper.GenerateCallbackOnRemoveFromCart).ToList();
+        if (itemNamesFormatForRemoveItemFromCartCallback.Contains(callbackQuery.Data))
+        {
+            await HandeRemoveItemFromCart(callbackQuery);
+        }
+    }
+
+    private async Task HandeRemoveItemFromCart(CallbackQuery callbackQuery)
+    {
+        long userId = callbackQuery.From.Id;
+        
+        string responseMessage = "Ok";
+        await using (IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                List<ShoppingItem> items = await _dbContext.ShoppingItems
+                    .ToListAsync();
+
+                ShoppingItem item = items.FirstOrDefault(x =>
+                                        _callbackGenerateHelper.GenerateCallbackOnRemoveFromCart(x.Name) ==
+                                        callbackQuery.Data)
+                                    ?? throw new Exception();
+
+                Internal_User user = await _dbContext.Users
+                                         .Include(x => x.Cart)
+                                         .ThenInclude(x => x.ItemsAdded)
+                                         .FirstOrDefaultAsync(x => x.TelegramId == userId)
+                                     ?? throw new Exception();
+
+                user.Cart.ItemsAdded.Remove(item);
+
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.Message);
+
+                responseMessage = "Что-то пошло не так, попробуйте позже";
+            }
+        }
+        await BotClient.SendTextMessageAsync(userId, responseMessage);
     }
 
     private async Task HandleAddItemToCartAsync(CallbackQuery callbackQuery)
@@ -202,6 +246,11 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         
         string responseMessage = GenerateLongShoppingItemMessage(chosenItem);
 
+        if (chosenItem.PhotoFileNames.Count > 9)
+        {
+            throw new Exception("Item has more then 9 pictures"); 
+        }
+        
         if (chosenItem.PhotoFileNames.Count == 0)
         {
             await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
@@ -211,11 +260,6 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         if (chosenItem.PhotoFileNames.Count == 1)
         {
             await SendShoppingItemWithSinglePhotoAsync(chosenItem, userId);
-            return;
-        }
-        if (chosenItem.PhotoFileNames.Count > 9)
-        {
-            throw new Exception("Item has more then 9 pictures");
         }
         else
         {

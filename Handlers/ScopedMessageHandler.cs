@@ -186,27 +186,7 @@ public class ScopedMessageHandler : MessageHandler
             throw new Exception("No such photos (business logic mistake)");
         }
 
-        if (shoppingItem.PhotoFileNames.Count == 1)
-        {
-            await GetResponsePhotosForSingleShoppingAsync(shoppingItem, userId);
-            return;
-        }
-
-        if (shoppingItem.PhotoFileNames.Count <= 9)
-        {
-            (List<InputMediaPhoto>, List<Stream>) getPhotosResult = await GetResponsePhotosForManyShoppingItemsAsync(shoppingItem, userId);
-            
-            await BotClient.SendMediaGroupAsync(userId, getPhotosResult.Item1);
-            
-            foreach (Stream stream in getPhotosResult.Item2)
-            {
-                await stream.DisposeAsync();
-            }
-
-            return;
-        }
-
-        throw new Exception("More then 9 photos (business logic mistake)");
+        await GetResponsePhotosForSingleShoppingAsync(shoppingItem, userId);
     }
     
     private async Task GetResponsePhotosForSingleShoppingAsync(ShoppingItem shoppingItem, long userId)
@@ -226,57 +206,15 @@ public class ScopedMessageHandler : MessageHandler
         using (Stream fileStream = IO_File.Open(photoPathUrl, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             InputOnlineFile file = new InputMedia(content: fileStream, fileName: shoppingItem.PhotoFileNames[0]);
-            await BotClient.SendPhotoAsync(userId, file, responseMessage);
+            await BotClient.SendPhotoAsync(userId, file, responseMessage, replyMarkup: new InlineKeyboardMarkup([
+                new InlineKeyboardButton("Удалить из карзины")
+                {
+                    CallbackData = _callbackGenerateHelper.GenerateCallbackOnRemoveFromCart(shoppingItem.Name)
+                }
+            ]));
         }
     }
     
-    private async Task<(List<InputMediaPhoto>, List<Stream>)> GetResponsePhotosForManyShoppingItemsAsync(ShoppingItem chosenItem, long userId)
-    {
-        string responseMessage = GenerateShortShoppingItemMessage(chosenItem);
-        
-        List<InputMediaPhoto> photos = new List<InputMediaPhoto>();
-
-        List<Stream> photoStreams = new List<Stream>();
-        foreach (string fileName in chosenItem.PhotoFileNames)
-        {
-            string photoPathUrl =
-                _photoDownloadHelper.GenerateFilePathString(fileName, chosenItem.Name);
-
-
-            if (!IO_File.Exists(photoPathUrl))
-            {
-                await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
-                await BotClient.SendTextMessageAsync(userId, responseMessage);
-                throw new Exception("Something wrong with photo files");
-            }
-
-            Stream fileStream = IO_File.Open(photoPathUrl, FileMode.Open, FileAccess.Read, FileShare.Read);
-            photos.Add(
-                new InputMediaPhoto(
-                    new InputMedia(fileStream, fileName: fileName)));
-            
-            photoStreams.Add(fileStream);
-        }
-
-        photos[0].Caption = responseMessage;
-        
-        return (photos, photoStreams);
-    }
-    
-    private string GenerateCartAsStringResponse(Cart cart)
-    {
-        StringBuilder builder = new StringBuilder();
-        
-        builder.Append("Ваша карзина:\n");
-        foreach (ShoppingItem item in cart.ItemsAdded) 
-        {
-            builder.Append("\n");
-            builder.Append(GenerateShortShoppingItemMessage(item));
-        }
-        builder.Append($"\n\nполная стоимость составит: {cart.ItemsAdded.Sum(x => x.Price)}");
-        return builder.ToString();
-    }
-
     private async Task OnTextMessage(Message message)
     {
         string response = "Неправильный формат комманды";
