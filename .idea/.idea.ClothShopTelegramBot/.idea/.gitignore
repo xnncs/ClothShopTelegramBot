@@ -11,10 +11,10 @@
 # Datasource local storage ignored files
 /dataSources/
 /dataSources.local.xml
-/obj/
-/Migrations/
-/photos/
-/bin/Debug/net9.0/
+/ShopTelegramBot/obj/
+/ShopTelegramBot/Migrations/
+/ShopTelegramBot/photos/
+/ShopTelegramBot/bin/Debug/net9.0/
 
 # Common IntelliJ Platform excludes
 
