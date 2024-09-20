@@ -39,7 +39,7 @@ public class ScopedMessageHandler : MessageHandler
 
     private readonly char _specialSymbol;
 
-    private static readonly string[] UserCommands = ["/start", "/categories", "/cart"];
+    private static readonly string[] UserCommands = ["/start", "/items", "/cart"];
     private static readonly string[] AdminCommands = ["/add_category", "/add_item", "/delete_category", "/delete_item"];
     
     protected override async Task HandleAsync(IContainer<Message> container)
@@ -88,7 +88,7 @@ public class ScopedMessageHandler : MessageHandler
                 await OnStartCommandAsync(message.Chat.Id, message.Chat.Username);
                 break;
             
-            case "/categories":
+            case "/items":
                 await OnGetCategoriesCommandAsync();
                 break;
             
@@ -357,16 +357,19 @@ public class ScopedMessageHandler : MessageHandler
     
     private async Task OnStartCommandAsync(long telegramUserId, string? username)
     {
+        string defaultResponseMessage = "Добро пожаловать в kanu store!\nМы занимаемся продажей шмотья разных каст (ниже вам будут представленны наши товары, сгрупированные по категориям).\nДля подробностей /info";
+        
+        ReplyKeyboardMarkup keyboard = new ReplyKeyboardMarkup(UserCommands.Select(x => new KeyboardButton(x)));
+        
         bool containsUser = await _dbContext.Users.AnyAsync(u => u.TelegramId == telegramUserId);
         if (containsUser)
         {
-            string response = "Добро пожаловать в наш магазин вещей! тут надо че то придумать";
-            await ResponseAsync(response);
+            await ResponseAsync(defaultResponseMessage, replyMarkup: keyboard);
         }
         else
         {
-            string welcomeResponse = "Добро пожаловать в наш магазин вещей! тут надо че то придумать\nОтветьте пожалуйста на пару простых вопросов.";
-            await ResponseAsync(welcomeResponse);
+            string welcomeResponse = $"Добро пожаловать в kanu store!\\nМы занимаемся продажей шмотья разных каст\nЗаполните форму ниже для авторизации.";
+            await ResponseAsync(welcomeResponse, replyMarkup: keyboard);
 
             int? age = await GetIntValueAsync("1. Сколько вам лет?");
             if (age == null)
@@ -389,19 +392,20 @@ public class ScopedMessageHandler : MessageHandler
                     _logger.LogError(exception.Message);
                 
                     string responseOnServerError = "Что-то пошло не так, попробуйте позже";
-                    await ResponseAsync(responseOnServerError);
+                    await ResponseAsync(responseOnServerError, replyMarkup: keyboard);
                     return;
                 }
             }
-        
-            string messageText = "Добро пожаловать в наш магазин вещей! тут надо че то придумать";
-            await ResponseAsync(messageText);
+            
+            await ResponseAsync(defaultResponseMessage, replyMarkup: keyboard);
         }
 
         bool isAdmin = await CheckAdminPermissionAsync(telegramUserId);
         string command = GenerateBasedOnRoleResponse(isAdmin);
 
         await ResponseAsync(command);
+
+        await OnGetCategoriesCommandAsync();
     }
     
     #endregion

@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using ShopTelegramBot.Abstract;
 using ShopTelegramBot.Database;
-using ShopTelegramBot.Extensions;
 using ShopTelegramBot.Handlers;
 using ShopTelegramBot.Helpers;
 using ShopTelegramBot.HelpingModels;
