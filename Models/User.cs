@@ -37,4 +37,6 @@ public class User
     public bool IsAdmin { get; set; }
 
     public Cart Cart { get; set; }
+    
+    public List<Feedback> Feedbacks { get; set; } 
 }

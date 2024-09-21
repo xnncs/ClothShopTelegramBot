@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -39,7 +38,7 @@ public class ScopedMessageHandler : MessageHandler
 
     private readonly char _specialSymbol;
 
-    private static readonly string[] UserCommands = ["/start", "/items", "/cart"];
+    private static readonly string[] UserCommands = ["/start", "/items", "/cart", "/info", "/feedbacks"];
     private static readonly string[] AdminCommands = ["/add_category", "/add_item", "/delete_category", "/delete_item"];
     
     protected override async Task HandleAsync(IContainer<Message> container)
@@ -95,6 +94,10 @@ public class ScopedMessageHandler : MessageHandler
             case "/cart":
                 await OnGetCartCommandAsync(message.Chat.Id);
                 break;
+            
+            case "/info":
+                await OnGetInfoCommandAsync();
+                break;
 
 
             case "/add_category":
@@ -133,6 +136,29 @@ public class ScopedMessageHandler : MessageHandler
                 await OnDeleteItemCommandAsync();
                 break;
         }
+    }
+
+    private async Task OnGetFeedbacksAsync()
+    {
+        
+    }
+
+    private async Task OnGetInfoCommandAsync()
+    {
+        string mainInfo = """
+                           Мы, Kanu store, занимаемся продажей пиздатой одежды, для того чтобы вы могли выглядеть как актеры голивуда.
+                           Чтобы заказть себе что-нибудь, найдите товар в нашем боте/тгк, и свяжитесь с мене   джером:
+                           контакты: @qsz44
+                           """;
+        await ResponseAsync(mainInfo);
+
+        string otherInfo = """
+                           По поводу передачи товара, есть 3 варианта:
+                           1. Самомвывоз (мы с вами договариваемся о месте и времяни встречи, там передаем вам вещь, а вы ее оплавиваете) - бесплатно.
+                           2. Доствака в пределах москвы (мы можем привести вам вещь курьером, если вы отправите 40% предоплаты, которые, в случае если вам товар не понравится, вернутся обратно к вам) - доп 250р.
+                           3. CDEK по всей россии.
+                           """;
+        await ResponseAsync(otherInfo);
     }
 
     private async Task OnGetCartCommandAsync(long telegramUserId)
@@ -401,9 +427,11 @@ public class ScopedMessageHandler : MessageHandler
         }
 
         bool isAdmin = await CheckAdminPermissionAsync(telegramUserId);
-        string command = GenerateBasedOnRoleResponse(isAdmin);
-
-        await ResponseAsync(command);
+        if (isAdmin)
+        {
+            string adminCommandsMessage = GenerateAdminCommandsString();
+            await ResponseAsync(adminCommandsMessage, replyMarkup: keyboard);
+        }
 
         await OnGetCategoriesCommandAsync();
     }
@@ -524,33 +552,19 @@ public class ScopedMessageHandler : MessageHandler
     #endregion
     
     #region EverysingElseHelping
-    
+
     /// <summary>
     /// Generates response based on user role, that shows available commands
     /// </summary>
-    private static string GenerateBasedOnRoleResponse(bool isAdmin)
+    private string GenerateAdminCommandsString()
     {
         StringBuilder messageBuilder = new StringBuilder();
-        if (isAdmin)
-        {
-            messageBuilder.Append("You are admin.\n");
-        }
+        messageBuilder.Append("Вы админ, вот ваши админ-команды:\n");
 
-        messageBuilder.Append("Available commands:\n");
-        foreach (string command in UserCommands)
+        foreach (string command in AdminCommands)
         {
-            messageBuilder.Append($"\n- {command}");
+            messageBuilder.Append($"\n{command}");
         }
-
-        if (isAdmin)
-        {
-            messageBuilder.Append("\n\nAdmin commands:");
-            foreach (string command in AdminCommands)
-            {
-                messageBuilder.Append($"\n- {command}");
-            }
-        }
-
         return messageBuilder.ToString();
     }
     

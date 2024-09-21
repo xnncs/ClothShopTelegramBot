@@ -21,18 +21,21 @@ public sealed class ApplicationDbContext : DbContext
     public DbSet<ShoppingCategory> ShoppingCategories { get; set; }
 
     public DbSet<Cart> Carts { get; set; }
+    
+    public DbSet<Feedback> Feedbacks { get; set; }
+        
 
     private readonly IPathHelper _pathHelper;
     
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        string connectionString = GetConntectionString();
+        string connectionString = GetConnectionString();
 
         optionsBuilder.UseNpgsql(connectionString)
             .EnableSensitiveDataLogging();
     }
 
-    private string GetConntectionString()
+    private string GetConnectionString()
     {
         return
             "Server=localhost;Database=ShopTelegramBot;Username=postgres;Password=1425;Port=5432;Include Error Detail=true";
@@ -42,6 +45,14 @@ public sealed class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         List<User> admins = [];
+
+        modelBuilder.Entity<Feedback>(options =>
+        {
+            options.HasKey(x => x.Id);
+            options.Property(x => x.Id).ValueGeneratedNever();
+
+            options.Property(x => x.Text).HasMaxLength(1250);
+        });
         
         modelBuilder.Entity<User>(options =>
         {
@@ -50,7 +61,11 @@ public sealed class ApplicationDbContext : DbContext
 
             options.Property(x => x.Username).HasMaxLength(35);
 
-
+            options.HasMany(x => x.Feedbacks)
+                .WithOne(x => x.Author)
+                .HasForeignKey(x => x.AuthorId);
+                
+            
             options.HasData(admins);
         });
 
@@ -65,7 +80,7 @@ public sealed class ApplicationDbContext : DbContext
 
             options.HasOne(x => x.ShoppingCategory)
                 .WithMany(x => x.ShoppingItems)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ShoppingCategory>(options =>
