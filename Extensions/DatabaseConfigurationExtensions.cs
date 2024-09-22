@@ -6,10 +6,11 @@ namespace ShopTelegramBot.Extensions;
 
 public static class DatabaseConfigurationExtensions
 {
-    public static DbContextOptionsBuilder ConfigureApplicationDbContext(this DbContextOptionsBuilder options, IConfiguration configuration)
+    public static DbContextOptionsBuilder ConfigureApplicationDbContext(this DbContextOptionsBuilder options,
+        IConfiguration configuration)
     {
-        string connectionString = configuration.GetConnectionString(nameof(ApplicationDbContext))
-                                  ?? throw new Exception("Service error: connection string is not configured");
+        var connectionString = configuration.GetConnectionString(nameof(ApplicationDbContext))
+                               ?? throw new Exception("Service error: connection string is not configured");
 
         options.UseNpgsql(connectionString)
             .EnableSensitiveDataLogging();

@@ -14,58 +14,55 @@ using TelegramUpdater.Hosting;
 using PathHelper = ShopTelegramBot.Helpers.PathHelper;
 
 
-IHostBuilder builder = Host.CreateDefaultBuilder();
+var builder = Host.CreateDefaultBuilder();
 
 builder.ConfigureHostConfiguration(configuration =>
 {
-   IPathHelper pathHelper = new PathHelper();
-   
-   string appsettingsFilePath = @"appsettings.json";
-   
-   configuration.SetBasePath(pathHelper.GetProjectDirectoryPath())
-      .AddJsonFile(appsettingsFilePath);
+    IPathHelper pathHelper = new PathHelper();
+
+    var appsettingsFilePath = @"appsettings.json";
+
+    configuration.SetBasePath(pathHelper.GetProjectDirectoryPath())
+        .AddJsonFile(appsettingsFilePath);
 });
 
 
 builder.ConfigureServices((hostContext, services) =>
 {
-   services.Configure<CharReplacingSettings>(hostContext.Configuration.GetSection(nameof(CharReplacingSettings)));
-   
-   services.AddDbContext<ApplicationDbContext>();
+    services.Configure<CharReplacingSettings>(hostContext.Configuration.GetSection(nameof(CharReplacingSettings)));
 
-   services.AddScoped<IPathHelper, PathHelper>();
-   services.AddScoped<IPhotoDownloadHelper, PhotoDownloadHelper>();
-   services.AddScoped<ICallbackGenerateHelper, CallbackGenerateHelper>();
-   
-   ConfigureTelegramUpdater(services, hostContext.Configuration);
+    services.AddDbContext<ApplicationDbContext>();
+
+    services.AddScoped<IPathHelper, PathHelper>();
+    services.AddScoped<IPhotoDownloadHelper, PhotoDownloadHelper>();
+    services.AddScoped<ICallbackGenerateHelper, CallbackGenerateHelper>();
+
+    ConfigureTelegramUpdater(services, hostContext.Configuration);
 });
 
 
-IHost host = builder.Build();
+var host = builder.Build();
 
 await host.RunAsync();
 return;
 
 
-
 void ConfigureTelegramUpdater(IServiceCollection services, IConfiguration configuration)
 {
-   string token = configuration.GetSection("TelegramBotToken").Value ??
-                  throw new Exception("Server error: no telegram bot token configured");
+    var token = configuration.GetSection("TelegramBotToken").Value ??
+                throw new Exception("Server error: no telegram bot token configured");
 
-   TelegramBotClient client = new TelegramBotClient(token);
+    var client = new TelegramBotClient(token);
 
-   services.AddHttpClient("TelegramBotClient").AddTypedClient<ITelegramBotClient>(httpClient => client);
+    services.AddHttpClient("TelegramBotClient").AddTypedClient<ITelegramBotClient>(httpClient => client);
 
-   UpdaterOptions updaterOptions = new UpdaterOptions(maxDegreeOfParallelism: 10, 
-      allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery]);
+    var updaterOptions = new UpdaterOptions(10,
+        allowedUpdates: [UpdateType.Message, UpdateType.CallbackQuery]);
 
-   services.AddTelegramUpdater(client, updaterOptions, botBuilder =>
-   {
-      botBuilder.AddDefaultExceptionHandler()
-         .AddScopedUpdateHandler<ScopedMessageHandler, Message>()
-         .AddScopedUpdateHandler<ScopedCallbackHandler, CallbackQuery>();
-   });
+    services.AddTelegramUpdater(client, updaterOptions, botBuilder =>
+    {
+        botBuilder.AddDefaultExceptionHandler()
+            .AddScopedUpdateHandler<ScopedMessageHandler, Message>()
+            .AddScopedUpdateHandler<ScopedCallbackHandler, CallbackQuery>();
+    });
 }
-
-

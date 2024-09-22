@@ -208,7 +208,7 @@ namespace ShopTelegramBot.Migrations
                     b.HasOne("ShopTelegramBot.Models.ShoppingCategory", "ShoppingCategory")
                         .WithMany("ShoppingItems")
                         .HasForeignKey("ShoppingCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ShoppingCategory");

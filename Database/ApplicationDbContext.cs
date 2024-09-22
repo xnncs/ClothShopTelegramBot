@@ -1,35 +1,31 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using ShopTelegramBot.Abstract;
 using ShopTelegramBot.Helpers;
-using ShopTelegramBot.HelpingModels;
 using ShopTelegramBot.Models;
 
 namespace ShopTelegramBot.Database;
 
 public sealed class ApplicationDbContext : DbContext
 {
+    private readonly IPathHelper _pathHelper;
+
     public ApplicationDbContext()
     {
         _pathHelper = new PathHelper();
     }
-    
+
     public DbSet<User> Users { get; set; }
-    
+
     public DbSet<ShoppingItem> ShoppingItems { get; set; }
     public DbSet<ShoppingCategory> ShoppingCategories { get; set; }
 
     public DbSet<Cart> Carts { get; set; }
-    
-    public DbSet<Feedback> Feedbacks { get; set; }
-        
 
-    private readonly IPathHelper _pathHelper;
-    
+    public DbSet<Feedback> Feedbacks { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        string connectionString = GetConnectionString();
+        var connectionString = GetConnectionString();
 
         optionsBuilder.UseNpgsql(connectionString)
             .EnableSensitiveDataLogging();
@@ -40,8 +36,8 @@ public sealed class ApplicationDbContext : DbContext
         return
             "Server=localhost;Database=ShopTelegramBot;Username=postgres;Password=1425;Port=5432;Include Error Detail=true";
     }
-    
-    
+
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         List<User> admins = [];
@@ -50,10 +46,10 @@ public sealed class ApplicationDbContext : DbContext
         {
             options.HasKey(x => x.Id);
             options.Property(x => x.Id).ValueGeneratedNever();
-            
+
             options.Property(x => x.Text).HasMaxLength(1250);
         });
-        
+
         modelBuilder.Entity<User>(options =>
         {
             options.HasKey(x => x.Id);
@@ -64,8 +60,8 @@ public sealed class ApplicationDbContext : DbContext
             options.HasMany(x => x.Feedbacks)
                 .WithOne(x => x.Author)
                 .HasForeignKey(x => x.AuthorId);
-                
-            
+
+
             options.HasData(admins);
         });
 
@@ -77,10 +73,6 @@ public sealed class ApplicationDbContext : DbContext
             options.Property(x => x.Name).HasMaxLength(35);
 
             options.Property(x => x.Description).HasMaxLength(1000);
-
-            options.HasOne(x => x.ShoppingCategory)
-                .WithMany(x => x.ShoppingItems)
-                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<ShoppingCategory>(options =>
@@ -91,9 +83,13 @@ public sealed class ApplicationDbContext : DbContext
             options.Property(x => x.Name).HasMaxLength(35);
 
             options.Property(x => x.Description).HasMaxLength(1000);
+
+            options.HasMany(x => x.ShoppingItems)
+                .WithOne(x => x.ShoppingCategory)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
-        modelBuilder.Entity<Cart>(options => 
+        modelBuilder.Entity<Cart>(options =>
         {
             options.HasOne(x => x.Owner)
                 .WithOne(x => x.Cart)

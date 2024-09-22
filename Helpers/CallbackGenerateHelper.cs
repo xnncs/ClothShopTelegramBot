@@ -42,7 +42,7 @@ public class CallbackGenerateHelper : ICallbackGenerateHelper
 
     public Regex GetOnGetFeedbackByPageNumberRegex()
     {
-        Regex feedbackRegex = new Regex("feedbacks/get/([0-9]+)");
+        var feedbackRegex = new Regex("feedbacks/get/([0-9]+)");
         return feedbackRegex;
     }
 
