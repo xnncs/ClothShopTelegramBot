@@ -2,18 +2,21 @@ namespace ShopTelegramBot.Models;
 
 public class Feedback
 {
-    public static Feedback Create(string text, int raing, User author) => new Feedback()
+    public static Feedback Create(string title, string text, int rate, User author) => new Feedback()
     {
         Id = Guid.NewGuid(),
+        Title = title,
         Text = text,
-        Rating = raing,
+        Rating = rate,
         Author = author,
-        CreatedAt = DateTime.Now
+        AuthorId = author.Id,
+        CreatedAt = DateTime.UtcNow
     };
     
     
     public Guid Id { get; set; }
     
+    public string Title { get; set; }
     public string Text { get; set; }
     
     public int Rating { get; set; }

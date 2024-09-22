@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace ShopTelegramBot.Abstract;
 
 public interface ICallbackGenerateHelper
@@ -8,4 +10,8 @@ public interface ICallbackGenerateHelper
     string GenerateItemsCallbackFormatStringOnDelete(string x);
     string GenerateCallbackOnAddToCart(string x);
     string GenerateCallbackOnRemoveFromCart(string x);
+    
+    string GenerateCallbackOnGetFeedbackByPageNumber(int pageNumber);
+    Regex GetOnGetFeedbackByPageNumberRegex();
+    int GetPageNumberByGetFeedbackCallbackString(string x);
 }

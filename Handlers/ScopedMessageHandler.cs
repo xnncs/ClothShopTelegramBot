@@ -13,7 +13,9 @@ using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.InputFiles;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramUpdater;
+using TelegramUpdater.RainbowUtilities;
 using TelegramUpdater.UpdateContainer;
+using TelegramUpdater.UpdateContainer.UpdateContainers;
 using TelegramUpdater.UpdateHandlers.Scoped.ReadyToUse;
 using Internal_User = ShopTelegramBot.Models.User;
 using IO_File = System.IO.File;
@@ -38,7 +40,9 @@ public class ScopedMessageHandler : MessageHandler
 
     private readonly char _specialSymbol;
 
-    private static readonly string[] UserCommands = ["/start", "/items", "/cart", "/info", "/feedbacks"];
+    private readonly int _paginationLimit = 3;
+
+    private static readonly string[] UserCommands = ["/start", "/items", "/cart", "/info", "/feedbacks", "/addfeedback"];
     private static readonly string[] AdminCommands = ["/add_category", "/add_item", "/delete_category", "/delete_item"];
     
     protected override async Task HandleAsync(IContainer<Message> container)
@@ -98,6 +102,14 @@ public class ScopedMessageHandler : MessageHandler
             case "/info":
                 await OnGetInfoCommandAsync();
                 break;
+            
+            case "/addfeedback":
+                await OnAddFeedbackCommandAsync(message.Chat.Id);
+                break;
+            
+            case "/feedbacks":
+                await OnGetFeedbackFirstTimeAsync();
+                break;
 
 
             case "/add_category":
@@ -138,9 +150,102 @@ public class ScopedMessageHandler : MessageHandler
         }
     }
 
-    private async Task OnGetFeedbacksAsync()
+    private async Task OnGetFeedbackFirstTimeAsync()
     {
+        List<Feedback> feedbacks = await _dbContext.Feedbacks
+            .OrderByDescending(x => x.Rating)
+            .Take(_paginationLimit)
+            .ToListAsync();
+        string response = GenerateFeedbacksString(feedbacks, 0);
         
+        int count = await _dbContext.Feedbacks.CountAsync();
+        if (count > _paginationLimit)
+        {
+            await ResponseAsync(response, replyMarkup: new InlineKeyboardMarkup([
+                new InlineKeyboardButton("Смотреть дальше")
+                {
+                    CallbackData = _callbackGenerateHelper.GenerateCallbackOnGetFeedbackByPageNumber(1)
+                }
+            ]));
+        }
+    }
+
+    private string GenerateFeedbacksString(List<Feedback> feedbacks, int pageNumber)
+    {
+        StringBuilder messageBuilder = new StringBuilder();
+        
+        messageBuilder.Append($"Отзывы ({pageNumber + 1}-я страница):\n");
+
+        foreach (Feedback feedback in feedbacks)
+        {
+            messageBuilder.AppendLine($"\n{GenerateFeedbackString(feedback)}");
+        }
+        return messageBuilder.ToString();
+    }
+
+    private string GenerateFeedbackString(Feedback feedback)
+    {
+        return $"""
+                {feedback.Title} - {feedback.Rating} {GenerateWordFromByNumber(feedback.Rating)}:
+                {feedback.Text}
+                """;
+    }
+
+    /// <summary>
+    /// Works only with 1-10 numbers
+    /// </summary>
+    private string GenerateWordFromByNumber(int number)
+    {
+        return number switch
+        {
+            1 => "звезда",
+            2 or 3 or 4 => "звезды",
+            _ => "звезд"
+        };
+    }
+
+    private async Task OnAddFeedbackCommandAsync(long userId)
+    {
+        Internal_User? user = await _dbContext.Users.FirstOrDefaultAsync(x => x.TelegramId == userId);
+        if (user == null)
+        {
+            await ResponseAsync("Вы не авторизированы");
+            return;
+        }
+
+        Feedback feedback = await GenerateNewFeedbackAsync(user);
+
+        await using (IDbContextTransaction transaction = await _dbContext.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                await _dbContext.Feedbacks.AddAsync(feedback);
+            
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.Message);
+                await ResponseAsync("Что-то пошло не так, попробуйте позже");
+                return;
+            }
+        }
+
+        await ResponseAsync("Ok");
+    }
+
+    private async Task<Feedback> GenerateNewFeedbackAsync(Internal_User user)
+    {
+        string title = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите название отзыва") ?? throw new Exception();
+        int rate = await GetIntValueAsync(TimeSpan.FromSeconds(180), "Введите вашу оценку нашего товара (от 1 до 10)") ?? throw new Exception();
+        if (rate is < 1 or > 10)
+        {
+            throw new Exception("Rate must be between 1 and 10");
+        }
+        string text = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите текст вашего отзыва") ?? throw new Exception();
+        
+        return Feedback.Create(title, text, rate, user);
     }
 
     private async Task OnGetInfoCommandAsync()
@@ -397,7 +502,7 @@ public class ScopedMessageHandler : MessageHandler
             string welcomeResponse = $"Добро пожаловать в kanu store!\\nМы занимаемся продажей шмотья разных каст\nЗаполните форму ниже для авторизации.";
             await ResponseAsync(welcomeResponse, replyMarkup: keyboard);
 
-            int? age = await GetIntValueAsync("1. Сколько вам лет?");
+            int? age = await GetIntValueAsync(TimeSpan.FromSeconds(180), "Введите ваш возраст");
             if (age == null)
             {
                 return;
@@ -442,14 +547,13 @@ public class ScopedMessageHandler : MessageHandler
     
     #region InputHelpingTools
 
-    private async Task<int?> GetIntValueAsync(string question)
+    private async Task<int?> GetIntValueAsync(TimeSpan span, string question)
     {
         int? value = null;
 
         while (value == null)
         {
-            if (int.TryParse(await AwaitTextInputAsync(
-                    TimeSpan.FromSeconds(180),
+            if (int.TryParse(await AwaitTextInputAsync(span,
                     question), out int result))
             {
                 value = result;
@@ -464,15 +568,14 @@ public class ScopedMessageHandler : MessageHandler
         return value;
     }
     
-    private async Task<double?> GetDoubleValueAsync(string question)
+    private async Task<double?> GetDoubleValueAsync(TimeSpan span, string question)
     {
         double? value = null;
 
         while (value == null)
         {
             if (double.TryParse(await AwaitTextInputAsync(
-                    TimeSpan.FromSeconds(180),
-                    question), out double result))
+                    span, question), out double result))
             {
                 value = result;
             }
@@ -502,8 +605,8 @@ public class ScopedMessageHandler : MessageHandler
         
         string itemName = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите название товара") ?? throw new Exception();
         string itemDescription = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите описание товара") ?? throw new Exception();
-        int unitsInStock = await GetIntValueAsync("Введите количество товара в наличи (число)") ?? throw new Exception();
-        double price = await GetDoubleValueAsync("Введите цену товара") ?? throw new Exception();
+        int unitsInStock = await GetIntValueAsync(TimeSpan.FromSeconds(180), "Введите количество товара в наличи (число)") ?? throw new Exception();
+        double price = await GetDoubleValueAsync(TimeSpan.FromSeconds(180), "Введите цену товара") ?? throw new Exception();
         
         
         await ResponseAsync("Отправьте фотографии товара (1-9)");

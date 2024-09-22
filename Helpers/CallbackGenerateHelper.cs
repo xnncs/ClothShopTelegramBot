@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using ShopTelegramBot.Abstract;
 
 namespace ShopTelegramBot.Helpers;
@@ -32,5 +33,21 @@ public class CallbackGenerateHelper : ICallbackGenerateHelper
     public string GenerateCallbackOnRemoveFromCart(string x)
     {
         return $"items/removeFromCart/{x.ToLower()}";
+    }
+
+    public string GenerateCallbackOnGetFeedbackByPageNumber(int pageNumber)
+    {
+        return $"feedbacks/get/{pageNumber}";
+    }
+
+    public Regex GetOnGetFeedbackByPageNumberRegex()
+    {
+        Regex feedbackRegex = new Regex("feedbacks/get/([0-9]+)");
+        return feedbackRegex;
+    }
+
+    public int GetPageNumberByGetFeedbackCallbackString(string x)
+    {
+        return int.Parse(x.Replace("feedbacks/get/", ""));
     }
 }

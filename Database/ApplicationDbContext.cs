@@ -50,7 +50,7 @@ public sealed class ApplicationDbContext : DbContext
         {
             options.HasKey(x => x.Id);
             options.Property(x => x.Id).ValueGeneratedNever();
-
+            
             options.Property(x => x.Text).HasMaxLength(1250);
         });
         

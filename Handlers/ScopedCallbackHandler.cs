@@ -16,6 +16,7 @@ using TelegramUpdater.UpdateHandlers.Scoped.ReadyToUse;
 using IO_File = System.IO.File;
 using Telegram_File = Telegram.Bot.Types.File;
 using System.IO;
+using System.Text.RegularExpressions;
 using Microsoft.EntityFrameworkCore.Storage;
 using Internal_User = ShopTelegramBot.Models.User;
 
@@ -38,6 +39,8 @@ public class ScopedCallbackHandler : CallbackQueryHandler
     private readonly ICallbackGenerateHelper _callbackGenerateHelper;
     
     private readonly char _specialSymbol;
+    
+    private readonly int _paginationLimit = 3;
     
     protected override async Task HandleAsync(IContainer<CallbackQuery> container)
     {
@@ -86,11 +89,78 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         List<string> itemNamesFormatForRemoveItemFromCartCallback = itemNames.Select(_callbackGenerateHelper.GenerateCallbackOnRemoveFromCart).ToList();
         if (itemNamesFormatForRemoveItemFromCartCallback.Contains(callbackQuery.Data))
         {
-            await HandeRemoveItemFromCart(callbackQuery);
+            await HandeRemoveItemFromCartAsync(callbackQuery);
+        }
+
+        Regex getFeedbacksRegex = _callbackGenerateHelper.GetOnGetFeedbackByPageNumberRegex();
+        if (getFeedbacksRegex.IsMatch(callbackQuery.Data))
+        {
+            await HandleGetFeedbacksAsync(callbackQuery);
         }
     }
 
-    private async Task HandeRemoveItemFromCart(CallbackQuery callbackQuery)
+    private async Task HandleGetFeedbacksAsync(CallbackQuery callbackQuery)
+    {
+        long userId = callbackQuery.From.Id;
+        
+        int pageNumber = _callbackGenerateHelper.GetPageNumberByGetFeedbackCallbackString(callbackQuery.Data!);
+        
+        List<Feedback> feedbacks = await _dbContext.Feedbacks
+            .OrderByDescending(x => x.Rating)
+            .Skip(pageNumber * _paginationLimit)
+            .Take(_paginationLimit)
+            .ToListAsync();
+        string response = GenerateFeedbacksString(feedbacks, pageNumber);
+        
+        int count = await _dbContext.Feedbacks.CountAsync();
+        if (count - pageNumber * _paginationLimit > _paginationLimit)
+        {
+            await BotClient.SendTextMessageAsync(userId, response, replyMarkup: new InlineKeyboardMarkup([
+                new InlineKeyboardButton("Смотреть дальше")
+                {
+                    CallbackData = _callbackGenerateHelper.GenerateCallbackOnGetFeedbackByPageNumber(pageNumber + 1)
+                }
+            ]));
+            return;
+        }
+        await BotClient.SendTextMessageAsync(userId, response);
+    }
+    
+    private string GenerateFeedbacksString(List<Feedback> feedbacks, int pageNumber)
+    {
+        StringBuilder messageBuilder = new StringBuilder();
+        
+        messageBuilder.Append($"Отзывы ({pageNumber + 1}-я страница):\n");
+
+        foreach (Feedback feedback in feedbacks)
+        {
+            messageBuilder.AppendLine($"\n{GenerateFeedbackString(feedback)}");
+        }
+        return messageBuilder.ToString();
+    }
+
+    private string GenerateFeedbackString(Feedback feedback)
+    {
+        return $"""
+                {feedback.Title} - {feedback.Rating} {GenerateWordFromByNumber(feedback.Rating)}:
+                {feedback.Text}
+                """;
+    }
+
+    /// <summary>
+    /// Works only with 1-10 numbers
+    /// </summary>
+    private string GenerateWordFromByNumber(int number)
+    {
+        return number switch
+        {
+            1 => "звезда",
+            2 or 3 or 4 => "звезды",
+            _ => "звезд"
+        };
+    }
+
+    private async Task HandeRemoveItemFromCartAsync(CallbackQuery callbackQuery)
     {
         long userId = callbackQuery.From.Id;
         
