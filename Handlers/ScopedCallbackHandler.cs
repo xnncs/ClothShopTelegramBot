@@ -82,10 +82,10 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         var getFeedbacksRegex = _callbackGenerateHelper.GetOnGetFeedbackByPageNumberRegex();
         if (getFeedbacksRegex.IsMatch(callbackQuery.Data)) await HandleGetFeedbacksAsync(callbackQuery);
     }
-
+    
 
     #region FeedbackTools
-
+    
     private async Task HandleGetFeedbacksAsync(CallbackQuery callbackQuery)
     {
         var userId = callbackQuery.From.Id;
@@ -127,7 +127,8 @@ public class ScopedCallbackHandler : CallbackQueryHandler
     private string GenerateFeedbackString(Feedback feedback)
     {
         return $"""
-                {feedback.Title} - {feedback.Rating} {GenerateWordFromByNumber(feedback.Rating)}:
+                Отзыв {feedback.Id.ToString()}:
+                {feedback.Title} - {feedback.Rating} {GenerateWordFromByNumber(feedback.Rating)}
                 {feedback.Text}
                 """;
     }

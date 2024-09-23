@@ -146,9 +146,19 @@ public class ScopedMessageHandler : MessageHandler
 
                 await OnDeleteItemCommandAsync();
                 break;
+            
+            case "/delete_feedback":
+                if (!await CheckAdminPermissionAsync(message.Chat.Id))
+                {
+                    await ResponseAsync(adminPermissionsErrorMessage);
+                    break;
+                }
+
+                await OnDeleteFeedbackCommandAsync();
+                break;
         }
     }
-
+    
     private async Task OnTextMessage(Message message)
     {
         var response = "Неправильный формат комманды";
@@ -171,6 +181,43 @@ public class ScopedMessageHandler : MessageHandler
 
     #region AdminCommands
 
+    private async Task OnDeleteFeedbackCommandAsync()
+    {
+        var feedbacks = await _dbContext.Feedbacks.ToListAsync();
+
+        var feedbackId = await AwaitTextInputAsync(TimeSpan.FromSeconds(180), "Введите id отзыва");
+        if (feedbackId == null)
+        {
+            await ResponseAsync("Что то пошло не так, попробуйте позже");
+            return;
+        }
+        
+        
+        if (feedbacks.All(x => x.Id.ToString() != feedbackId))
+        {
+            await ResponseAsync("Нет отзыва с таким id, попробуйте еще раз");
+            return;
+        }
+        
+        await using (var transaction = await _dbContext.Database.BeginTransactionAsync())
+        {
+            try
+            {
+                await _dbContext.Feedbacks.Where(x => x.Id == Guid.Parse(feedbackId)).ExecuteDeleteAsync();
+            
+                await _dbContext.SaveChangesAsync();
+                await transaction.CommitAsync();
+            }
+            catch (Exception exception)
+            {
+                _logger.LogError(exception.Message);
+                await ResponseAsync("Что то пошло не так, попробуйте позже");
+            }
+        }
+
+        await ResponseAsync("Correct");
+    }
+    
     private async Task OnDeleteCategoryCommandAsync()
     {
         var categories = await _dbContext.ShoppingCategories.ToListAsync();
@@ -624,7 +671,8 @@ public class ScopedMessageHandler : MessageHandler
     private string GenerateFeedbackString(Feedback feedback)
     {
         return $"""
-                {feedback.Title} - {feedback.Rating} {GenerateWordFromByNumber(feedback.Rating)}:
+                Отзыв {feedback.Id.ToString()}:
+                {feedback.Title} - {feedback.Rating} {GenerateWordFromByNumber(feedback.Rating)}
                 {feedback.Text}
                 """;
     }
