@@ -389,6 +389,12 @@ public class ScopedMessageHandler : MessageHandler
             .OrderByDescending(x => x.Rating)
             .Take(_paginationLimit)
             .ToListAsync();
+        if (!feedbacks.Any())
+        {
+            await ResponseAsync("Пока что никаких отзывов не добавлено");
+            return;
+        }
+        
         var response = GenerateFeedbacksString(feedbacks, 0);
 
         var count = await _dbContext.Feedbacks.CountAsync();
@@ -399,6 +405,10 @@ public class ScopedMessageHandler : MessageHandler
                     CallbackData = _callbackGenerateHelper.GenerateCallbackOnGetFeedbackByPageNumber(1)
                 }
             ]));
+        else
+        {
+            await ResponseAsync(response);
+        }
     }
 
     private async Task OnGetCategoriesCommandAsync()

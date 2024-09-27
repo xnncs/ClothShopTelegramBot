@@ -187,3 +187,110 @@ System.Threading.Tasks.TaskCanceledException: The operation was canceled.
    at Telegram.Bot.TelegramBotClientExtensions.GetUpdatesAsync(ITelegramBotClient botClient, Nullable`1 offset, Nullable`1 limit, Nullable`1 timeout, IEnumerable`1 allowedUpdates, CancellationToken cancellationToken)
    at TelegramUpdater.Hosting.SimpleWriterService.ExecuteAsync(CancellationToken stoppingToken)
 2024-09-27 13:26:25.744 +03:00 [WRN] Emergency cancel triggered.
+2024-09-27 17:54:29.964 +03:00 [INF] Logger initialized.
+2024-09-27 17:54:29.990 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedMessageHandler
+2024-09-27 17:54:29.990 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedCallbackHandler
+2024-09-27 17:54:29.992 +03:00 [INF] Added exception handler for System.Exception
+2024-09-27 17:54:29.997 +03:00 [INF] Started Polling from writer service!
+2024-09-27 17:54:30.087 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2024-09-27 17:54:30.087 +03:00 [INF] Hosting environment: Production
+2024-09-27 17:54:30.087 +03:00 [INF] Content root path: /Users/artem/Programming/dotnet/projects/KanuStoreBot/bin/Debug/net9.0
+2024-09-27 17:55:30.126 +03:00 [INF] Received message: /feedbacks from user with username: zitiret with id: 1367636999
+2024-09-27 17:55:42.565 +03:00 [INF] Received message: /add_feedback from user with username: zitiret with id: 1367636999
+2024-09-27 17:55:56.983 +03:00 [INF] Received message: /feedbacks from user with username: zitiret with id: 1367636999
+2024-09-27 17:56:21.504 +03:00 [INF] Application is shutting down...
+2024-09-27 17:56:21.526 +03:00 [FTL] Auto update writer stopped due to an ecxeption.
+System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.IO.IOException: Unable to read data from the transport connection: Operation canceled.
+ ---> System.Net.Sockets.SocketException (89): Operation canceled
+   --- End of inner exception stack trace ---
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.EnsureFullTlsFrameAsync[TIOAdapter](CancellationToken cancellationToken, Int32 estimatedSize)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.ReadAsyncInternal[TIOAdapter](Memory`1 buffer, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.Metrics.MetricsHandler.SendAsyncWithMetrics(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpClient.HandleFailure(Exception e, Boolean telemetryStarted, HttpResponseMessage response, CancellationTokenSource cts, CancellationToken cancellationToken, CancellationTokenSource pendingRequestsCts)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   at Telegram.Bot.TelegramBotClient.<MakeRequestAsync>g__SendRequestAsync|22_0[TResponse](HttpClient httpClient, HttpRequestMessage httpRequest, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClient.MakeRequestAsync[TResponse](IRequest`1 request, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClientExtensions.GetUpdatesAsync(ITelegramBotClient botClient, Nullable`1 offset, Nullable`1 limit, Nullable`1 timeout, IEnumerable`1 allowedUpdates, CancellationToken cancellationToken)
+   at TelegramUpdater.Hosting.SimpleWriterService.ExecuteAsync(CancellationToken stoppingToken)
+2024-09-27 17:56:21.555 +03:00 [WRN] Emergency cancel triggered.
+2024-09-27 17:56:40.365 +03:00 [INF] Logger initialized.
+2024-09-27 17:56:40.390 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedMessageHandler
+2024-09-27 17:56:40.391 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedCallbackHandler
+2024-09-27 17:56:40.392 +03:00 [INF] Added exception handler for System.Exception
+2024-09-27 17:56:40.398 +03:00 [INF] Started Polling from writer service!
+2024-09-27 17:56:40.607 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2024-09-27 17:56:40.607 +03:00 [INF] Hosting environment: Production
+2024-09-27 17:56:40.607 +03:00 [INF] Content root path: /Users/artem/Programming/dotnet/projects/KanuStoreBot/bin/Debug/net9.0
+2024-09-27 17:56:49.886 +03:00 [INF] Received message: /feedbacks from user with username: zitiret with id: 1367636999
+2024-09-27 17:58:28.580 +03:00 [INF] Logger initialized.
+2024-09-27 17:58:28.619 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedMessageHandler
+2024-09-27 17:58:28.621 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedCallbackHandler
+2024-09-27 17:58:28.622 +03:00 [INF] Added exception handler for System.Exception
+2024-09-27 17:58:28.630 +03:00 [INF] Started Polling from writer service!
+2024-09-27 17:58:28.791 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2024-09-27 17:58:28.791 +03:00 [INF] Hosting environment: Production
+2024-09-27 17:58:28.794 +03:00 [INF] Content root path: /Users/artem/Programming/dotnet/projects/KanuStoreBot/bin/Debug/net9.0
+2024-09-27 17:58:37.905 +03:00 [INF] Logger initialized.
+2024-09-27 17:58:37.934 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedMessageHandler
+2024-09-27 17:58:37.935 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedCallbackHandler
+2024-09-27 17:58:37.936 +03:00 [INF] Added exception handler for System.Exception
+2024-09-27 17:58:37.938 +03:00 [INF] Started Polling from writer service!
+2024-09-27 17:58:38.147 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2024-09-27 17:58:38.147 +03:00 [INF] Hosting environment: Production
+2024-09-27 17:58:38.147 +03:00 [INF] Content root path: /Users/artem/Programming/dotnet/projects/KanuStoreBot/bin/Debug/net9.0
+2024-09-27 17:58:41.288 +03:00 [INF] Received message: /feedbacks from user with username: zitiret with id: 1367636999
+2024-09-27 17:58:48.622 +03:00 [INF] Received message: /info from user with username: zitiret with id: 1367636999
+2024-09-27 17:58:53.205 +03:00 [INF] Received message: /start from user with username: zitiret with id: 1367636999
+2024-09-27 17:59:11.168 +03:00 [INF] Received message: /start from user with username: zitiret with id: 1367636999
+2024-09-27 17:59:24.488 +03:00 [INF] Received message: /delete_feedback from user with username: zitiret with id: 1367636999
+2024-09-27 17:59:38.827 +03:00 [INF] Received message: /feedbacks from user with username: zitiret with id: 1367636999
+2024-09-27 18:01:19.643 +03:00 [INF] Application is shutting down...
+2024-09-27 18:01:19.656 +03:00 [FTL] Auto update writer stopped due to an ecxeption.
+System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.IO.IOException: Unable to read data from the transport connection: Operation canceled.
+ ---> System.Net.Sockets.SocketException (89): Operation canceled
+   --- End of inner exception stack trace ---
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.EnsureFullTlsFrameAsync[TIOAdapter](CancellationToken cancellationToken, Int32 estimatedSize)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.ReadAsyncInternal[TIOAdapter](Memory`1 buffer, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.Metrics.MetricsHandler.SendAsyncWithMetrics(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpClient.HandleFailure(Exception e, Boolean telemetryStarted, HttpResponseMessage response, CancellationTokenSource cts, CancellationToken cancellationToken, CancellationTokenSource pendingRequestsCts)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   at Telegram.Bot.TelegramBotClient.<MakeRequestAsync>g__SendRequestAsync|22_0[TResponse](HttpClient httpClient, HttpRequestMessage httpRequest, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClient.MakeRequestAsync[TResponse](IRequest`1 request, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClientExtensions.GetUpdatesAsync(ITelegramBotClient botClient, Nullable`1 offset, Nullable`1 limit, Nullable`1 timeout, IEnumerable`1 allowedUpdates, CancellationToken cancellationToken)
+   at TelegramUpdater.Hosting.SimpleWriterService.ExecuteAsync(CancellationToken stoppingToken)
+2024-09-27 18:01:19.685 +03:00 [WRN] Emergency cancel triggered.
+2024-09-27 18:01:22.913 +03:00 [INF] Logger initialized.
+2024-09-27 18:01:22.936 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedMessageHandler
+2024-09-27 18:01:22.936 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedCallbackHandler
+2024-09-27 18:01:22.937 +03:00 [INF] Added exception handler for System.Exception
+2024-09-27 18:01:22.939 +03:00 [INF] Started Polling from writer service!
+2024-09-27 18:01:23.020 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2024-09-27 18:01:23.020 +03:00 [INF] Hosting environment: Production
+2024-09-27 18:01:23.020 +03:00 [INF] Content root path: /Users/artem/Programming/dotnet/projects/KanuStoreBot/bin/Debug/net9.0
+2024-09-27 18:01:28.666 +03:00 [INF] Received message: /feedbacks from user with username: zitiret with id: 1367636999
