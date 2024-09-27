@@ -367,7 +367,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         }
     }
 
-    private string GenerateMessageOnGetShoppingItem(ShoppingCategory category)
+    private string GenerateMessageOnChooseShoppingCategory(ShoppingCategory category)
     {
         var messageBuilder = new StringBuilder();
 
@@ -461,40 +461,50 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             await BotClient.SendTextMessageAsync(userId, "Пока что в этой категории нет товаров");
             return;
         }
-
-        var responseMessage = GenerateMessageOnGetShoppingItem(chosenCategory);
-
-        if (chosenCategory.ShoppingItems.Count == 0)
+        
+        for (int i = 0; i < chosenCategory.ShoppingItems.Count; i += 10)
         {
-            await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
-            await BotClient.SendTextMessageAsync(userId, responseMessage);
-            throw new Exception("Something wrong with photo files");
+            var lastNumber = i + ((chosenCategory.ShoppingItems.Count - i) % 10);
+            
+            var currentCategory = ShoppingCategory.Copy(chosenCategory);
+            currentCategory.ShoppingItems = currentCategory.ShoppingItems[i..lastNumber];
+            
+            string responseMessage = GenerateMessageOnChooseShoppingCategory(currentCategory);
+            await SendShoppingCategoryWithPhotosAsync(currentCategory, userId);
         }
-
-        if (chosenCategory.ShoppingItems.Count == 1)
-        {
-            await SendShoppingCategoryWithSingleItemAsync(chosenCategory, userId);
-            return;
-        }
-
-        if (chosenCategory.ShoppingItems.Count > 9) throw new Exception("Category cant has more then 9 items");
-
-        var getPhotosResult =
-            await GetResponsePhotosForCategoryAsync(chosenCategory, userId);
-
-        await BotClient.SendMediaGroupAsync(userId, getPhotosResult.Item1);
-
-        foreach (var stream in getPhotosResult.Item2) await stream.DisposeAsync();
-
+        
         var keyboard = GenerateCategoriesInlineKeyboardMarkup(chosenCategory);
         await BotClient.SendTextMessageAsync(userId, "Выберите вещь по её номеру", replyMarkup: keyboard);
     }
 
-    private async Task<(List<InputMediaPhoto>, List<Stream>)> GetResponsePhotosForCategoryAsync(
-        ShoppingCategory category, long userId)
+    private async Task SendShoppingCategoryWithPhotosAsync(ShoppingCategory category, long userId)
     {
-        var responseMessage = GenerateMessageOnGetShoppingItem(category);
+        if (category.ShoppingItems.Count is 0 or > 10)
+        {
+            throw new Exception("Logical exception");
+        }
 
+        if (category.ShoppingItems.Count == 0)
+        {
+            await SendShoppingCategoryWithSingleItemAsync(category, userId);
+            return;
+        }
+        await SendShoppingCategoryWithPhotosByTenAsync(category, userId);
+    }    
+    
+    private async Task SendShoppingCategoryWithPhotosByTenAsync(ShoppingCategory category, long userId, string? responseMessage = null)
+    {
+        var getPhotosResult =
+            await GetResponsePhotosForCategoryAsync(category, userId, responseMessage);
+
+        await BotClient.SendMediaGroupAsync(userId, getPhotosResult.Item1);
+
+        foreach (var stream in getPhotosResult.Item2) await stream.DisposeAsync();
+    }
+    
+    private async Task<(List<InputMediaPhoto>, List<Stream>)> GetResponsePhotosForCategoryAsync(
+        ShoppingCategory category, long userId, string? responseMessage = null)
+    {
         var photos = new List<InputMediaPhoto>();
 
         var photoStreams = new List<Stream>();
@@ -527,10 +537,8 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         return (photos, photoStreams);
     }
 
-    private async Task SendShoppingCategoryWithSingleItemAsync(ShoppingCategory category, long userId)
+    private async Task SendShoppingCategoryWithSingleItemAsync(ShoppingCategory category, long userId, string? responseMessage = null)
     {
-        var responseMessage = GenerateMessageOnGetShoppingItem(category);
-
         var singleItem = category.ShoppingItems[0];
 
         var photoPathUrl =
@@ -547,9 +555,6 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             InputOnlineFile file = new InputMedia(fileStream, singleItem.PhotoFileNames[0]);
             await BotClient.SendPhotoAsync(userId, file, responseMessage);
         }
-
-        var keyboard = GenerateCategoriesInlineKeyboardMarkup(category);
-        await BotClient.SendTextMessageAsync(userId, "Выберите вещь по её номеру", replyMarkup: keyboard);
     }
 
     private InlineKeyboardMarkup GenerateCategoriesInlineKeyboardMarkup(ShoppingCategory category)
