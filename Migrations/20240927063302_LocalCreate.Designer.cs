@@ -13,8 +13,8 @@ using ShopTelegramBot.Database;
 namespace ShopTelegramBot.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20240919181817_AddedCartFeature")]
-    partial class AddedCartFeature
+    [Migration("20240927063302_LocalCreate")]
+    partial class LocalCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -56,6 +56,36 @@ namespace ShopTelegramBot.Migrations
                         .IsUnique();
 
                     b.ToTable("Carts");
+                });
+
+            modelBuilder.Entity("ShopTelegramBot.Models.Feedback", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Rating")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(1250)
+                        .HasColumnType("character varying(1250)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.ToTable("Feedbacks");
                 });
 
             modelBuilder.Entity("ShopTelegramBot.Models.ShoppingCategory", b =>
@@ -165,12 +195,23 @@ namespace ShopTelegramBot.Migrations
                     b.Navigation("Owner");
                 });
 
+            modelBuilder.Entity("ShopTelegramBot.Models.Feedback", b =>
+                {
+                    b.HasOne("ShopTelegramBot.Models.User", "Author")
+                        .WithMany("Feedbacks")
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Author");
+                });
+
             modelBuilder.Entity("ShopTelegramBot.Models.ShoppingItem", b =>
                 {
                     b.HasOne("ShopTelegramBot.Models.ShoppingCategory", "ShoppingCategory")
                         .WithMany("ShoppingItems")
                         .HasForeignKey("ShoppingCategoryId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("ShoppingCategory");
@@ -185,6 +226,8 @@ namespace ShopTelegramBot.Migrations
                 {
                     b.Navigation("Cart")
                         .IsRequired();
+
+                    b.Navigation("Feedbacks");
                 });
 #pragma warning restore 612, 618
         }

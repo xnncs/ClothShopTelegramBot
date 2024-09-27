@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ShopTelegramBot")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+736188ed181880624f93b4264630bf41da4254c8")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f87d8be66430084333b8fa6b146f5c17c8a476e0")]
 [assembly: System.Reflection.AssemblyProductAttribute("ShopTelegramBot")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ShopTelegramBot")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

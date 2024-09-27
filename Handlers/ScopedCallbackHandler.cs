@@ -183,7 +183,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             {
                 _logger.LogError(exception.Message);
 
-                responseMessage = "Что-то пошло не так, попробуйте позже";
+                responseMessage = exception.Message;
             }
         }
 
@@ -222,7 +222,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             {
                 _logger.LogError(exception.Message);
 
-                responseMessage = "Что-то пошло не так, попробуйте позже";
+                responseMessage = exception.Message;
             }
         }
 
@@ -260,7 +260,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             {
                 _logger.LogError(exception.Message);
 
-                responseMessage = "Что-то пошло не так, попробуйте позже";
+                responseMessage = exception.Message;
             }
         }
 
@@ -435,7 +435,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             {
                 _logger.LogError(exception.Message);
 
-                responseMessage = "Что-то пошло не так, попробуйте позже";
+                responseMessage = exception.Message;
             }
         }
 

@@ -1,0 +1,79 @@
+2024-09-27 13:05:53.066 +03:00 [DBG] Hosting starting
+2024-09-27 13:05:53.102 +03:00 [INF] Logger initialized.
+2024-09-27 13:05:53.103 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedMessageHandler
+2024-09-27 13:05:53.104 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedCallbackHandler
+2024-09-27 13:05:53.105 +03:00 [INF] Added exception handler for System.Exception
+2024-09-27 13:05:53.108 +03:00 [INF] Started Polling from writer service!
+2024-09-27 13:05:53.269 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2024-09-27 13:05:53.269 +03:00 [INF] Hosting environment: Production
+2024-09-27 13:05:53.269 +03:00 [INF] Content root path: /Users/artem/Programming/dotnet/projects/KanuStoreBot/bin/Debug/net9.0
+2024-09-27 13:05:53.269 +03:00 [DBG] Hosting started
+2024-09-27 13:11:57.007 +03:00 [INF] Application is shutting down...
+2024-09-27 13:11:57.009 +03:00 [DBG] Hosting stopping
+2024-09-27 13:11:57.030 +03:00 [FTL] Auto update writer stopped due to an ecxeption.
+System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.IO.IOException: Unable to read data from the transport connection: Operation canceled.
+ ---> System.Net.Sockets.SocketException (89): Operation canceled
+   --- End of inner exception stack trace ---
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.EnsureFullTlsFrameAsync[TIOAdapter](CancellationToken cancellationToken, Int32 estimatedSize)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.ReadAsyncInternal[TIOAdapter](Memory`1 buffer, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.Metrics.MetricsHandler.SendAsyncWithMetrics(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpClient.HandleFailure(Exception e, Boolean telemetryStarted, HttpResponseMessage response, CancellationTokenSource cts, CancellationToken cancellationToken, CancellationTokenSource pendingRequestsCts)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   at Telegram.Bot.TelegramBotClient.<MakeRequestAsync>g__SendRequestAsync|22_0[TResponse](HttpClient httpClient, HttpRequestMessage httpRequest, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClient.MakeRequestAsync[TResponse](IRequest`1 request, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClientExtensions.GetUpdatesAsync(ITelegramBotClient botClient, Nullable`1 offset, Nullable`1 limit, Nullable`1 timeout, IEnumerable`1 allowedUpdates, CancellationToken cancellationToken)
+   at TelegramUpdater.Hosting.SimpleWriterService.ExecuteAsync(CancellationToken stoppingToken)
+2024-09-27 13:11:57.056 +03:00 [WRN] Emergency cancel triggered.
+2024-09-27 13:11:57.061 +03:00 [DBG] Hosting stopped
+2024-09-27 13:11:58.489 +03:00 [INF] Logger initialized.
+2024-09-27 13:11:58.512 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedMessageHandler
+2024-09-27 13:11:58.513 +03:00 [INF] Added new scoped handler ShopTelegramBot.Handlers.ScopedCallbackHandler
+2024-09-27 13:11:58.514 +03:00 [INF] Added exception handler for System.Exception
+2024-09-27 13:11:58.516 +03:00 [INF] Started Polling from writer service!
+2024-09-27 13:11:58.676 +03:00 [INF] Application started. Press Ctrl+C to shut down.
+2024-09-27 13:11:58.676 +03:00 [INF] Hosting environment: Production
+2024-09-27 13:11:58.676 +03:00 [INF] Content root path: /Users/artem/Programming/dotnet/projects/KanuStoreBot/bin/Debug/net9.0
+2024-09-27 13:12:51.224 +03:00 [INF] Received message: /start
+2024-09-27 13:13:04.201 +03:00 [INF] Received message: /start
+2024-09-27 13:13:39.836 +03:00 [INF] Received message: /start
+2024-09-27 13:13:45.341 +03:00 [INF] Application is shutting down...
+2024-09-27 13:13:45.347 +03:00 [FTL] Auto update writer stopped due to an ecxeption.
+System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.Threading.Tasks.TaskCanceledException: The operation was canceled.
+ ---> System.IO.IOException: Unable to read data from the transport connection: Operation canceled.
+ ---> System.Net.Sockets.SocketException (89): Operation canceled
+   --- End of inner exception stack trace ---
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.ThrowException(SocketError error, CancellationToken cancellationToken)
+   at System.Net.Sockets.Socket.AwaitableSocketAsyncEventArgs.System.Threading.Tasks.Sources.IValueTaskSource<System.Int32>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.EnsureFullTlsFrameAsync[TIOAdapter](CancellationToken cancellationToken, Int32 estimatedSize)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Security.SslStream.ReadAsyncInternal[TIOAdapter](Memory`1 buffer, CancellationToken cancellationToken)
+   at System.Runtime.CompilerServices.PoolingAsyncValueTaskMethodBuilder`1.StateMachineBox`1.System.Threading.Tasks.Sources.IValueTaskSource<TResult>.GetResult(Int16 token)
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpConnection.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpConnectionPool.SendWithVersionDetectionAndRetryAsync(HttpRequestMessage request, Boolean async, Boolean doRequestAuth, CancellationToken cancellationToken)
+   at System.Net.Http.Metrics.MetricsHandler.SendAsyncWithMetrics(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.RedirectHandler.SendAsync(HttpRequestMessage request, Boolean async, CancellationToken cancellationToken)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   --- End of inner exception stack trace ---
+   at System.Net.Http.HttpClient.HandleFailure(Exception e, Boolean telemetryStarted, HttpResponseMessage response, CancellationTokenSource cts, CancellationToken cancellationToken, CancellationTokenSource pendingRequestsCts)
+   at System.Net.Http.HttpClient.<SendAsync>g__Core|83_0(HttpRequestMessage request, HttpCompletionOption completionOption, CancellationTokenSource cts, Boolean disposeCts, CancellationTokenSource pendingRequestsCts, CancellationToken originalCancellationToken)
+   at Telegram.Bot.TelegramBotClient.<MakeRequestAsync>g__SendRequestAsync|22_0[TResponse](HttpClient httpClient, HttpRequestMessage httpRequest, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClient.MakeRequestAsync[TResponse](IRequest`1 request, CancellationToken cancellationToken)
+   at Telegram.Bot.TelegramBotClientExtensions.GetUpdatesAsync(ITelegramBotClient botClient, Nullable`1 offset, Nullable`1 limit, Nullable`1 timeout, IEnumerable`1 allowedUpdates, CancellationToken cancellationToken)
+   at TelegramUpdater.Hosting.SimpleWriterService.ExecuteAsync(CancellationToken stoppingToken)
+2024-09-27 13:13:45.357 +03:00 [WRN] Emergency cancel triggered.

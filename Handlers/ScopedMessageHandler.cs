@@ -47,10 +47,11 @@ public class ScopedMessageHandler : MessageHandler
     }
 
     protected override async Task HandleAsync(IContainer<Message> container)
-    {
+    { 
         if (container.Update.Type != MessageType.Text) return;
 
         var message = container.Update;
+        _logger.LogInformation($"Received message: {message.Text} from user with username: {message.From!.Username} with id: {message.From.Id}");
 
         if (message.Text!.StartsWith('/'))
         {
@@ -191,7 +192,6 @@ public class ScopedMessageHandler : MessageHandler
             await ResponseAsync("Что то пошло не так, попробуйте позже");
             return;
         }
-        
         
         if (feedbacks.All(x => x.Id.ToString() != feedbackId))
         {

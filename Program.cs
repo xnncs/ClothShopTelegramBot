@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using ShopTelegramBot.Abstract;
 using ShopTelegramBot.Database;
 using ShopTelegramBot.Handlers;
@@ -12,6 +13,7 @@ using Telegram.Bot.Types.Enums;
 using TelegramUpdater;
 using TelegramUpdater.Hosting;
 using PathHelper = ShopTelegramBot.Helpers.PathHelper;
+using Serilog;
 
 
 var builder = Host.CreateDefaultBuilder();
@@ -28,7 +30,14 @@ builder.ConfigureHostConfiguration(configuration =>
 
 
 builder.ConfigureServices((hostContext, services) =>
-{
+{   
+    services.AddSerilog(loggerConfiguration =>
+    {
+        loggerConfiguration.MinimumLevel.Debug()
+            .WriteTo.Console()
+            .ReadFrom.Configuration(hostContext.Configuration);
+    });
+    
     services.Configure<CharReplacingSettings>(hostContext.Configuration.GetSection(nameof(CharReplacingSettings)));
 
     services.AddDbContext<ApplicationDbContext>();

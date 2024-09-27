@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/ShopTelegramBot.csproj": {}
+    "/Users/artem/Programming/dotnet/projects/KanuStoreBot/ShopTelegramBot.csproj": {}
   },
   "projects": {
-    "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/ShopTelegramBot.csproj": {
+    "/Users/artem/Programming/dotnet/projects/KanuStoreBot/ShopTelegramBot.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/ShopTelegramBot.csproj",
+        "projectUniqueName": "/Users/artem/Programming/dotnet/projects/KanuStoreBot/ShopTelegramBot.csproj",
         "projectName": "ShopTelegramBot",
-        "projectPath": "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/ShopTelegramBot.csproj",
+        "projectPath": "/Users/artem/Programming/dotnet/projects/KanuStoreBot/ShopTelegramBot.csproj",
         "packagesPath": "/Users/artem/.nuget/packages/",
-        "outputPath": "/Users/artem/RiderProjects/TelegramBots/ClothShopTelegramBot/obj/",
+        "outputPath": "/Users/artem/Programming/dotnet/projects/KanuStoreBot/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "/Users/artem/.nuget/NuGet/NuGet.Config"
@@ -66,6 +66,30 @@
             "Npgsql.EntityFrameworkCore.PostgreSQL": {
               "target": "Package",
               "version": "[8.0.4, )"
+            },
+            "Serilog": {
+              "target": "Package",
+              "version": "[4.0.1, )"
+            },
+            "Serilog.AspNetCore": {
+              "target": "Package",
+              "version": "[8.0.2, )"
+            },
+            "Serilog.Extensions.Hosting": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Serilog.Extensions.Logging": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            },
+            "Serilog.Sinks.Console": {
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
+            "Serilog.Sinks.File": {
+              "target": "Package",
+              "version": "[6.0.0, )"
             },
             "TelegramUpdater": {
               "target": "Package",
