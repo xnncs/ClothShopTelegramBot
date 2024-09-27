@@ -367,7 +367,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         }
     }
 
-    private string GenerateMessageOnChooseShoppingCategory(ShoppingCategory category)
+    private string GenerateMessageOnChooseShoppingCategory(ShoppingCategory category, int startIndex)
     {
         var messageBuilder = new StringBuilder();
 
@@ -377,7 +377,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
         {
             var item = category.ShoppingItems[index];
 
-            messageBuilder.Append($"\n{index + 1}. ");
+            messageBuilder.Append($"\n{index + startIndex + 1}. ");
             messageBuilder.Append(GenerateShortShoppingItemMessage(item));
         }
 
@@ -469,15 +469,15 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             var currentCategory = ShoppingCategory.Copy(chosenCategory);
             currentCategory.ShoppingItems = currentCategory.ShoppingItems[i..lastNumber];
             
-            string responseMessage = GenerateMessageOnChooseShoppingCategory(currentCategory);
-            await SendShoppingCategoryWithPhotosAsync(currentCategory, userId);
+            string responseMessage = GenerateMessageOnChooseShoppingCategory(currentCategory, i);
+            await SendShoppingCategoryWithPhotosAsync(currentCategory, userId, responseMessage);
         }
         
         var keyboard = GenerateCategoriesInlineKeyboardMarkup(chosenCategory);
         await BotClient.SendTextMessageAsync(userId, "Выберите вещь по её номеру", replyMarkup: keyboard);
     }
 
-    private async Task SendShoppingCategoryWithPhotosAsync(ShoppingCategory category, long userId)
+    private async Task SendShoppingCategoryWithPhotosAsync(ShoppingCategory category, long userId, string? responseMessage)
     {
         if (category.ShoppingItems.Count is 0 or > 10)
         {
@@ -486,10 +486,10 @@ public class ScopedCallbackHandler : CallbackQueryHandler
 
         if (category.ShoppingItems.Count == 0)
         {
-            await SendShoppingCategoryWithSingleItemAsync(category, userId);
+            await SendShoppingCategoryWithSingleItemAsync(category, userId, responseMessage);
             return;
         }
-        await SendShoppingCategoryWithPhotosByTenAsync(category, userId);
+        await SendShoppingCategoryWithPhotosByTenAsync(category, userId, responseMessage);
     }    
     
     private async Task SendShoppingCategoryWithPhotosByTenAsync(ShoppingCategory category, long userId, string? responseMessage = null)
