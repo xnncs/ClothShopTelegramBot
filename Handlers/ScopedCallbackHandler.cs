@@ -360,11 +360,9 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             throw new Exception("No such files with this path");
         }
 
-        using (Stream fileStream = IO_File.Open(photoPathUrl, FileMode.Open, FileAccess.Read, FileShare.Read))
-        {
-            InputOnlineFile file = new InputMedia(fileStream, chosenItem.PhotoFileNames[0]);
-            await BotClient.SendPhotoAsync(userId, file, responseMessage);
-        }
+        await using Stream fileStream = IO_File.Open(photoPathUrl, FileMode.Open, FileAccess.Read, FileShare.Read);
+        InputOnlineFile file = new InputMedia(fileStream, chosenItem.PhotoFileNames[0]);
+        await BotClient.SendPhotoAsync(userId, file, responseMessage);
     }
 
     private string GenerateMessageOnChooseShoppingCategory(ShoppingCategory category, int startIndex)
@@ -469,7 +467,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             var currentCategory = ShoppingCategory.Copy(chosenCategory);
             currentCategory.ShoppingItems = currentCategory.ShoppingItems[i..lastNumber];
             
-            string responseMessage = GenerateMessageOnChooseShoppingCategory(currentCategory, i);
+            var responseMessage = GenerateMessageOnChooseShoppingCategory(currentCategory, i);
             await SendShoppingCategoryWithPhotosAsync(currentCategory, userId, responseMessage);
         }
         
@@ -520,7 +518,7 @@ public class ScopedCallbackHandler : CallbackQueryHandler
             if (!IO_File.Exists(photoPathUrl))
             {
                 await BotClient.SendTextMessageAsync(userId, "Что-то пошло не так с загрузкой фотографий.");
-                await BotClient.SendTextMessageAsync(userId, responseMessage);
+                await BotClient.SendTextMessageAsync(userId, responseMessage!);
                 throw new Exception("Something wrong with photo files");
             }
 
@@ -546,31 +544,20 @@ public class ScopedCallbackHandler : CallbackQueryHandler
 
         if (!IO_File.Exists(photoPathUrl))
         {
-            await BotClient.SendTextMessageAsync(userId, responseMessage);
+            await BotClient.SendTextMessageAsync(userId, responseMessage!);
             throw new Exception("No such files with this path");
         }
 
-        using (Stream fileStream = IO_File.Open(photoPathUrl, FileMode.Open, FileAccess.Read, FileShare.Read))
-        {
-            InputOnlineFile file = new InputMedia(fileStream, singleItem.PhotoFileNames[0]);
-            await BotClient.SendPhotoAsync(userId, file, responseMessage);
-        }
+        await using Stream fileStream = IO_File.Open(photoPathUrl, FileMode.Open, FileAccess.Read, FileShare.Read);
+        InputOnlineFile file = new InputMedia(fileStream, singleItem.PhotoFileNames[0]);
+        await BotClient.SendPhotoAsync(userId, file, responseMessage);
     }
 
     private InlineKeyboardMarkup GenerateCategoriesInlineKeyboardMarkup(ShoppingCategory category)
     {
-        var buttons = new List<InlineKeyboardButton>();
-        for (var index = 0; index < category.ShoppingItems.Count; index++)
-        {
-            var item = category.ShoppingItems[index];
-
-            var button = new InlineKeyboardButton((index + 1).ToString())
-            {
-                CallbackData = _callbackGenerateHelper.GenerateItemsCallbackFormatStringOnGet(item.Name)
-            };
-
-            buttons.Add(button);
-        }
+        var buttons = category.ShoppingItems.Select((item, index) => new InlineKeyboardButton((index + 1).ToString()) 
+            { CallbackData = _callbackGenerateHelper.GenerateItemsCallbackFormatStringOnGet(item.Name) }
+        ).ToList();
 
         return new InlineKeyboardMarkup(buttons);
     }

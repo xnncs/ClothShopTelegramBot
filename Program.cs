@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using ShopTelegramBot.Abstract;
 using ShopTelegramBot.Database;
 using ShopTelegramBot.Handlers;
@@ -16,41 +15,35 @@ using PathHelper = ShopTelegramBot.Helpers.PathHelper;
 using Serilog;
 
 
-var builder = Host.CreateDefaultBuilder();
-
-builder.ConfigureHostConfiguration(configuration =>
-{
-    IPathHelper pathHelper = new PathHelper();
-
-    var appsettingsFilePath = @"appsettings.json";
-
-    configuration.SetBasePath(pathHelper.GetProjectDirectoryPath())
-        .AddJsonFile(appsettingsFilePath);
-});
-
-
-builder.ConfigureServices((hostContext, services) =>
-{   
-    services.AddSerilog(loggerConfiguration =>
+var host = Host.CreateDefaultBuilder(args)
+    .ConfigureHostConfiguration(configuration =>
     {
-        loggerConfiguration.MinimumLevel.Debug()
-            .WriteTo.Console()
-            .ReadFrom.Configuration(hostContext.Configuration);
-    });
-    
-    services.Configure<CharReplacingSettings>(hostContext.Configuration.GetSection(nameof(CharReplacingSettings)));
+        IPathHelper pathHelper = new PathHelper();
 
-    services.AddDbContext<ApplicationDbContext>();
+        var appsettingsFilePath = @"appsettings.json";
 
-    services.AddScoped<IPathHelper, PathHelper>();
-    services.AddScoped<IPhotoDownloadHelper, PhotoDownloadHelper>();
-    services.AddScoped<ICallbackGenerateHelper, CallbackGenerateHelper>();
+        configuration.SetBasePath(pathHelper.GetProjectDirectoryPath())
+                    .AddJsonFile(appsettingsFilePath);
+    })
+    .ConfigureServices((hostContext, services) =>
+    {   
+        services.AddSerilog(loggerConfiguration =>
+        {
+            loggerConfiguration.MinimumLevel.Debug()
+                .WriteTo.Console()
+                .ReadFrom.Configuration(hostContext.Configuration);
+        });
+        
+        services.Configure<CharReplacingSettings>(hostContext.Configuration.GetSection(nameof(CharReplacingSettings)));
 
-    ConfigureTelegramUpdater(services, hostContext.Configuration);
-});
+        services.AddDbContext<ApplicationDbContext>();
 
+        services.AddTransient<IPathHelper, PathHelper>();
+        services.AddScoped<IPhotoDownloadHelper, PhotoDownloadHelper>();
+        services.AddScoped<ICallbackGenerateHelper, CallbackGenerateHelper>();
 
-var host = builder.Build();
+        ConfigureTelegramUpdater(services, hostContext.Configuration);
+    }).Build();
 
 await host.RunAsync();
 return;

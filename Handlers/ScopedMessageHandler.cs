@@ -438,7 +438,7 @@ public class ScopedMessageHandler : MessageHandler
         }
 
         var keyboard = new InlineKeyboardMarkup(buttons);
-
+        
 
         await ResponseAsync(messageBuilder.ToString(), replyMarkup: keyboard);
     }
@@ -500,7 +500,7 @@ public class ScopedMessageHandler : MessageHandler
     private async Task OnGetInfoCommandAsync()
     {
         var mainInfo = """
-                       Мы, Kanu store, занимаемся продажей пиздатой одежды, для того чтобы вы могли выглядеть как актеры голивуда.
+                       Мы занимаемся продажей стильной уличной одежды, для того чтобы вы могли выглядеть как актеры голивуда.
                        Чтобы заказть себе что-нибудь, найдите товар в нашем боте/тгк, и свяжитесь с мене   джером:
                        контакты: @qsz44
                        """;
@@ -606,7 +606,7 @@ public class ScopedMessageHandler : MessageHandler
             if (container.Container.Message?.Photo == null) await ResponseAsync("Wrong photo format");
 
             var photos = container!.Container.Message!.Photo!;
-            var photo = photos[photos.Length - 1];
+            var photo = photos.Last();
 
 
             var fileName = Guid.NewGuid().ToString();
